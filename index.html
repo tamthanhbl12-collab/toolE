@@ -681,14 +681,23 @@ function renderAll(){
     [...same,...other].forEach(v=>{ if(picks.length<3 && !picks.some(p=>norm(p)===norm(v))) picks.push(v); });
     const opts=picks.concat([right]); shuffleArr(opts);
     let done=false;
+    const optLang = d==='en' ? 'vi' : 'en';
     opts.forEach((txt,k)=>{
-      const b=document.createElement('button');
-      b.className='card rounded-2xl px-4 py-3 text-left text-[15px] hover:bg-[#2A2A2A]';
-      b.textContent=String.fromCharCode(65+k)+'. '+txt;
+      const b=document.createElement('div');
+      b.className='card rounded-2xl px-4 py-3 text-[15px] flex items-center gap-3 cursor-pointer hover:bg-[#2A2A2A]';
+      b.dataset.txt=txt;
+      const label=document.createElement('span');
+      label.className='flex-1 text-left';
+      label.textContent=String.fromCharCode(65+k)+'. '+txt;
+      const spk=document.createElement('span');
+      spk.className='flex-shrink-0 w-9 h-9 rounded-full bg-[#2A2A2A] flex items-center justify-center hover:bg-[#333]';
+      spk.textContent='🔊'; spk.title='Nghe đọc đáp án này (không chọn)';
+      spk.onclick=e=>{ e.stopPropagation(); speakText(cleanForSpeech(txt), optLang); };
+      b.append(label,spk);
       b.onclick=()=>{
         if(done) return; done=true;
         const ok=txt===right;
-        box.querySelectorAll('button').forEach(x=>{ x.style.pointerEvents='none'; if(x.textContent.slice(3)===right) x.classList.add('qopt-ok'); });
+        box.querySelectorAll('[data-txt]').forEach(x=>{ x.style.cursor='default'; if(x.dataset.txt===right) x.classList.add('qopt-ok'); });
         if(!ok) b.classList.add('qopt-bad');
         q('#flashBack').classList.remove('hidden');
         toast(ok?'✅ Chính xác!':'❌ Chưa đúng', ok?'#8CB580':'#F87171');
@@ -706,7 +715,7 @@ function renderAll(){
   };
   q('#nextF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx+1)%n; showCard(); };
   q('#prevF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx-1+n)%n; showCard(); };
-  q('#speakF').onclick=()=>{ const it=getCurrent(); if(it) speakSingle(cleanForSpeech(lessons[it.L].vocab[it.i][0])); };
+  q('#speakF').onclick=()=>{ const it=getCurrent(); if(!it) return; const r=lessons[it.L].vocab[it.i]; if(dirOf(it)==='vi') speakText(cleanForSpeech(r[2]||''),'vi'); else speakSingle(cleanForSpeech(r[0])); };
   q('#shuffleFlash').onclick=()=>{ shuffleArr(order); reset(); };
   wrap.querySelectorAll('.dirBtn').forEach(b=>b.onclick=()=>{ cfg.dir=b.dataset.dir; reset(); });
   q('#quizBtn').onclick=()=>{ cfg.quiz=!cfg.quiz; updateHardUI(); showCard(); };
