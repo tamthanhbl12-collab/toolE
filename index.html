@@ -41,6 +41,10 @@ body{font-family:Inter,system-ui;background:#0F0F0F;color:#E5E7EB}
 .hintBtn{margin-top:10px;padding:6px 14px;border-radius:999px;background:#2A2A2A;font-size:12px}
 .sys-card .eng{font-weight:700;color:#8CB580 !important}
 .sys-card .vie{font-weight:600;font-style:normal;color:#C9D6C3}
+#quizOpts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:760px;margin-top:16px}
+@media (max-width:640px){#quizOpts{grid-template-columns:repeat(2,1fr)}}
+.spkBtn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:8px;border-radius:9999px;background:#2A2A2A;vertical-align:middle}
+.spkBtn:hover{background:#333}
 .sub-card{margin-left:28px}
 @media (max-width:640px){.sub-card{margin-left:14px}}
 #selPop{position:fixed;z-index:60;width:300px;max-width:calc(100vw - 16px);background:#1E1E1E;border:1px solid #3A3A3A;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.6);padding:10px;display:none}
@@ -584,11 +588,10 @@ function renderAll(){
      <div id="flashBack" class="text-[20px] text-[#8CB580] mt-6 hidden font-medium border-t border-[#2A2A2A] pt-4 w-full"></div>
      <div class="absolute bottom-5 text-[11px] text-gray-500">Bấm để lật • 🔊 tự động đọc tiếng Anh • ⭐ để note từ khó</div>
     </div>
-    <div id="quizOpts" class="grid gap-2 w-full max-w-[560px] mt-4"></div>
+    <div id="quizOpts" class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-[760px] mt-4"></div>
     <div class="flex flex-wrap gap-3 mt-6 justify-center">
      <button id="prevF" class="px-6 py-3 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] hover:bg-[#2A2A2A]">← Trước</button>
      <button id="nextF" class="px-6 py-3 rounded-full bg-[#8CB580] text-black font-bold hover:bg-[#9AD690]">Tiếp →</button>
-     <button id="speakF" class="px-6 py-3 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] hover:bg-[#2A2A2A]">🔊 Đọc lại</button>
     </div>
     <div id="hardListPreview" class="mt-6 card rounded-2xl p-4 w-full max-w-[560px] hidden">
      <div class="font-bold text-[13px] mb-2">📚 Danh sách từ khó nhớ (<span id="hardTotal"></span> từ)</div>
@@ -596,6 +599,7 @@ function renderAll(){
     </div>
   `;
   area.appendChild(wrap);
+  const SPK='<button type="button" class="spkBtn inline-flex w-9 h-9 ml-2 rounded-full bg-[#2A2A2A] items-center justify-center text-base align-middle hover:bg-[#333]" title="Nghe đọc tiếng Anh">🔊</button>';
   const q=s=>wrap.querySelector(s);
   const hardItems=()=>{ const r=[]; const ls = cfg.scope==='all' ? lessons.map((_,k)=>k) : [currentLesson]; ls.forEach(L=>lessons[L].hard.forEach(i=>{ if(lessons[L].vocab&&lessons[L].vocab[i]) r.push({L,i}); })); return r; };
   function updateHardUI(){
@@ -637,11 +641,11 @@ function renderAll(){
     const d=dirOf(it);
     const front=q('#flashFront'), phon=q('#flashPhon'), back=q('#flashBack');
     if(d==='en'){
-      front.textContent=row[0]||''; phon.textContent=row[1]||''; back.textContent=row[2]||'';
+      front.textContent=row[0]||''; phon.innerHTML=escHtml(row[1]||'')+SPK; back.textContent=row[2]||'';
       q('#flashTag').textContent='🇬🇧 Tiếng Anh → nghĩa tiếng Việt';
     } else {
-      front.textContent=row[2]||''; phon.textContent='';
-      back.innerHTML=escHtml(row[0]||'')+(row[1]?`<div class="text-sm text-gray-400 font-mono mt-1">${escHtml(row[1])}</div>`:'');
+      front.textContent=row[2]||''; phon.innerHTML='';
+      back.innerHTML=escHtml(row[0]||'')+`<div class="text-sm text-gray-400 font-mono mt-1">${escHtml(row[1]||'')}${SPK}</div>`;
       q('#flashTag').textContent='🇻🇳 Tiếng Việt → nhớ từ tiếng Anh';
     }
     if(cfg.scope==='all') q('#flashTag').textContent+=' • Bài '+lessons[it.L].id;
@@ -681,19 +685,11 @@ function renderAll(){
     [...same,...other].forEach(v=>{ if(picks.length<3 && !picks.some(p=>norm(p)===norm(v))) picks.push(v); });
     const opts=picks.concat([right]); shuffleArr(opts);
     let done=false;
-    const optLang = d==='en' ? 'vi' : 'en';
     opts.forEach((txt,k)=>{
       const b=document.createElement('div');
-      b.className='card rounded-2xl px-4 py-3 text-[15px] flex items-center gap-3 cursor-pointer hover:bg-[#2A2A2A]';
+      b.className='card rounded-2xl px-3 py-3 text-[14px] text-center flex items-center justify-center cursor-pointer hover:bg-[#2A2A2A] min-h-[56px]';
       b.dataset.txt=txt;
-      const label=document.createElement('span');
-      label.className='flex-1 text-left';
-      label.textContent=String.fromCharCode(65+k)+'. '+txt;
-      const spk=document.createElement('span');
-      spk.className='flex-shrink-0 w-9 h-9 rounded-full bg-[#2A2A2A] flex items-center justify-center hover:bg-[#333]';
-      spk.textContent='🔊'; spk.title='Nghe đọc đáp án này (không chọn)';
-      spk.onclick=e=>{ e.stopPropagation(); speakText(cleanForSpeech(txt), optLang); };
-      b.append(label,spk);
+      b.textContent=String.fromCharCode(65+k)+'. '+txt;
       b.onclick=()=>{
         if(done) return; done=true;
         const ok=txt===right;
@@ -707,15 +703,15 @@ function renderAll(){
     });
   }
   const reset=()=>{ idx=0; Object.keys(dirCache).forEach(k=>delete dirCache[k]); showCard(); updateHardUI(); };
-  q('#flashCard').onclick=()=>{
+  q('#flashCard').onclick=e=>{
+    const it=getCurrent();
+    if(e.target.closest('.spkBtn')){ if(it) speakSingle(cleanForSpeech(lessons[it.L].vocab[it.i][0])); return; }
     const back=q('#flashBack'); const wasHidden=back.classList.contains('hidden');
     back.classList.toggle('hidden');
-    const it=getCurrent();
     if(it && wasHidden && dirOf(it)==='vi') speakSingle(cleanForSpeech(lessons[it.L].vocab[it.i][0]));
   };
   q('#nextF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx+1)%n; showCard(); };
   q('#prevF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx-1+n)%n; showCard(); };
-  q('#speakF').onclick=()=>{ const it=getCurrent(); if(!it) return; const r=lessons[it.L].vocab[it.i]; if(dirOf(it)==='vi') speakText(cleanForSpeech(r[2]||''),'vi'); else speakSingle(cleanForSpeech(r[0])); };
   q('#shuffleFlash').onclick=()=>{ shuffleArr(order); reset(); };
   wrap.querySelectorAll('.dirBtn').forEach(b=>b.onclick=()=>{ cfg.dir=b.dataset.dir; reset(); });
   q('#quizBtn').onclick=()=>{ cfg.quiz=!cfg.quiz; updateHardUI(); showCard(); };
