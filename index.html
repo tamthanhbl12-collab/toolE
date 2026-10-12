@@ -528,165 +528,206 @@ function renderAll(){
  }else if(currentTab==='vocab' || currentTab==='extra'){
   renderWordTab(area, currentTab);
  }else if(currentTab==='flash'){
-  const l=lessons[currentLesson]; 
-  if(!l.hard) l.hard=[];
-  const vocab=l.vocab||[]; 
-  if(vocab.length===0){ area.innerHTML='<div class="card rounded-2xl p-8 text-center"><div class="text-4xl mb-3">📚</div><div class="font-bold">Chưa có từ vựng</div></div>'; } 
-  else { 
-   let idx=0; 
-   let filterHard=false;
-   let shuffleOrder = vocab.map((_,i)=>i);
-   const getActiveList = ()=> filterHard ? l.hard.slice() : shuffleOrder;
-   const getCurrentVocabIndex = ()=> {
-     const list=getActiveList();
-     if(list.length===0) return -1;
-     return list[idx % list.length];
-   };
-   const wrap=document.createElement('div'); 
-   wrap.className='flex flex-col items-center w-full'; 
-   wrap.innerHTML=`
+  const l=lessons[currentLesson];
+  lessons.forEach(x=>{ if(!x.hard) x.hard=[]; });
+  const cfg=(window.__flashCfg=window.__flashCfg||{dir:'en',scope:'lesson'});
+  let idx=0;
+  let filterHard=false;
+  let order=[];
+  const dirCache={};
+  const shuffleArr=a=>{ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } };
+  const buildOrder=()=>{
+    order=[];
+    const ls = cfg.scope==='all' ? lessons.map((_,k)=>k) : [currentLesson];
+    ls.forEach(L=>{ (lessons[L].vocab||[]).forEach((_,i)=>order.push({L,i})); });
+    if(cfg.scope==='all') shuffleArr(order);
+  };
+  const isHardItem=it=>lessons[it.L].hard.includes(it.i);
+  const getActiveList = ()=> filterHard ? order.filter(isHardItem) : order;
+  const getCurrent = ()=>{ const list=getActiveList(); return list.length? list[idx % list.length] : null; };
+  const dirOf = it=>{
+    if(cfg.dir!=='mix') return cfg.dir;
+    const k=it.L+':'+it.i;
+    if(!dirCache[k]) dirCache[k]=Math.random()<0.5?'en':'vi';
+    return dirCache[k];
+  };
+  buildOrder();
+  const on='px-3 py-1.5 rounded-full bg-[#8CB580] text-black text-xs font-bold';
+  const off='px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs hover:bg-[#2A2A2A]';
+  const wrap=document.createElement('div');
+  wrap.className='flex flex-col items-center w-full';
+  wrap.innerHTML=`
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-2">
+     <button data-dir="en" class="dirBtn">🇬🇧 Anh → Việt</button>
+     <button data-dir="vi" class="dirBtn">🇻🇳 Việt → Anh</button>
+     <button data-dir="mix" class="dirBtn">🎲 Lẫn lộn 2 chiều</button>
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-2">
+     <button data-scope="lesson" class="scopeBtn">📘 Bài này</button>
+     <button data-scope="all" class="scopeBtn">📚 Toàn giáo trình (trộn ngẫu nhiên)</button>
+     <button id="quizBtn">🎯 Trắc nghiệm 4 đáp án</button>
+    </div>
     <div class="flex flex-wrap items-center justify-center gap-2 mb-4">
-     <span class="text-xs text-gray-400">Flashcard - <span id="flashTotal">${vocab.length}</span> từ</span>
+     <span class="text-xs text-gray-400">Flashcard - <span id="flashTotal"></span> từ</span>
      <button id="shuffleFlash" class="px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs hover:bg-[#2A2A2A]">🔀 Trộn</button>
      <button id="markHardBtn" class="px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#FACC15]/30 text-xs text-[#FACC15] hover:bg-[#FACC15]/10">⭐ Đánh dấu khó nhớ</button>
-     <button id="filterHardBtn" class="px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs">📚 Chỉ ôn từ khó (<span id="hardCount">${l.hard.length}</span>)</button>
+     <button id="filterHardBtn" class="px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs"></button>
      <button id="clearHardBtn" class="px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-red-900/30 text-xs text-red-400 hover:bg-red-900/20">🗑️ Xóa DS khó</button>
     </div>
     <div id="flashCard" class="card rounded-[28px] w-full max-w-[560px] min-h-[360px] flex flex-col items-center justify-center p-8 text-center cursor-pointer relative" style="border-top:4px solid ${l.color}; border-left:4px solid #FACC15;">
      <div class="absolute top-4 left-4 w-8 h-8 rounded-full bg-[#FACC15] text-black font-bold text-sm flex items-center justify-center" id="flashNum">1</div>
-     <div class="absolute top-4 right-4 text-[11px] text-gray-500" id="flashCounter">1 / ${vocab.length}</div>
+     <div class="absolute top-4 right-4 text-[11px] text-gray-500" id="flashCounter"></div>
      <div id="hardBadge" class="absolute top-4 left-1/2 -translate-x-1/2 hidden px-3 py-1 rounded-full bg-[#FACC15] text-black text-[11px] font-bold">⭐ KHÓ NHỚ</div>
-     <div id="flashFront" class="text-[28px] font-bold leading-tight mt-6"></div>
+     <div id="flashTag" class="text-[11px] text-gray-500 mt-6"></div>
+     <div id="flashFront" class="text-[28px] font-bold leading-tight mt-2"></div>
      <div id="flashPhon" class="text-sm text-gray-400 mt-3 font-mono"></div>
      <div id="flashBack" class="text-[20px] text-[#8CB580] mt-6 hidden font-medium border-t border-[#2A2A2A] pt-4 w-full"></div>
-     <div class="absolute bottom-5 text-[11px] text-gray-500">Bấm để lật • 🔊 tự động đọc • ⭐ để note từ khó</div>
+     <div class="absolute bottom-5 text-[11px] text-gray-500">Bấm để lật • 🔊 tự động đọc tiếng Anh • ⭐ để note từ khó</div>
     </div>
+    <div id="quizOpts" class="grid gap-2 w-full max-w-[560px] mt-4"></div>
     <div class="flex flex-wrap gap-3 mt-6 justify-center">
      <button id="prevF" class="px-6 py-3 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] hover:bg-[#2A2A2A]">← Trước</button>
      <button id="nextF" class="px-6 py-3 rounded-full bg-[#8CB580] text-black font-bold hover:bg-[#9AD690]">Tiếp →</button>
      <button id="speakF" class="px-6 py-3 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] hover:bg-[#2A2A2A]">🔊 Đọc lại</button>
     </div>
     <div id="hardListPreview" class="mt-6 card rounded-2xl p-4 w-full max-w-[560px] hidden">
-     <div class="font-bold text-[13px] mb-2">📚 Danh sách từ khó nhớ (${l.hard.length} từ)</div>
+     <div class="font-bold text-[13px] mb-2">📚 Danh sách từ khó nhớ (<span id="hardTotal"></span> từ)</div>
      <div id="hardListContent" class="text-xs text-gray-400 max-h-[120px] overflow-y-auto space-y-1"></div>
     </div>
-   `; 
-   area.appendChild(wrap); 
-   function updateHardUI(){
-     const hardCountEl=wrap.querySelector('#hardCount');
-     if(hardCountEl) hardCountEl.textContent=l.hard.length;
-     const filterBtn=wrap.querySelector('#filterHardBtn');
-     if(filterBtn){
-       if(filterHard){
-         filterBtn.className='px-3 py-1.5 rounded-full bg-[#FACC15] text-black text-xs font-bold';
-         filterBtn.innerHTML=`📚 Đang ôn từ khó (${l.hard.length}) • Bấm để xem tất cả`;
-       } else {
-         filterBtn.className='px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs';
-         filterBtn.innerHTML=`📚 Chỉ ôn từ khó (<span id="hardCount">${l.hard.length}</span>)`;
-       }
-     }
-     const preview=wrap.querySelector('#hardListPreview');
-     const content=wrap.querySelector('#hardListContent');
-     if(l.hard.length>0){
-       preview.classList.remove('hidden');
-       content.innerHTML=l.hard.map(i=>{
-         const r=vocab[i];
-         return r ? `<div class="flex justify-between"><span>${r[0]}</span><span class="text-[#8CB580]">${r[2]||''}</span></div>` : '';
-       }).join('');
-     } else {
-       preview.classList.add('hidden');
-     }
-   }
-   function showCard(){ 
-     const activeList=getActiveList();
-     if(activeList.length===0){
-       wrap.querySelector('#flashFront').textContent= filterHard ? 'Chưa có từ khó nào - hãy đánh dấu ⭐ ở chế độ tất cả' : 'Không có từ';
-       wrap.querySelector('#flashPhon').textContent='';
-       wrap.querySelector('#flashBack').textContent='';
-       wrap.querySelector('#flashCounter').textContent='0 / 0';
-       wrap.querySelector('#flashNum').textContent='0';
-       wrap.querySelector('#hardBadge').classList.add('hidden');
-       return;
-     }
-     const vocabIdx = activeList[idx % activeList.length];
-     const row=vocab[vocabIdx]; 
-     if(!row) return;
-     wrap.querySelector('#flashFront').textContent=row[0]||''; 
-     wrap.querySelector('#flashPhon').textContent=row[1]||''; 
-     const back=wrap.querySelector('#flashBack'); 
-     back.textContent=row[2]||''; 
-     back.classList.add('hidden'); 
-     wrap.querySelector('#flashCounter').textContent=(idx+1)+' / '+activeList.length + (filterHard ? ' (khó)' : ''); 
-     wrap.querySelector('#flashNum').textContent=(idx+1); 
-     const isHard = l.hard.includes(vocabIdx);
-     const badge=wrap.querySelector('#hardBadge');
-     const markBtn=wrap.querySelector('#markHardBtn');
-     if(isHard){
-       badge.classList.remove('hidden');
-       markBtn.textContent='⭐ Đã đánh dấu khó • Bấm để bỏ';
-       markBtn.className='px-3 py-1.5 rounded-full bg-[#FACC15] text-black text-xs font-bold';
-       wrap.querySelector('#flashCard').style.borderLeft='4px solid #FACC15';
-       wrap.querySelector('#flashCard').style.background='linear-gradient(90deg, rgba(250,204,21,0.08) 0%, #1E1E1E 20%)';
-     } else {
-       badge.classList.add('hidden');
-       markBtn.textContent='⭐ Đánh dấu khó nhớ';
-       markBtn.className='px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#FACC15]/30 text-xs text-[#FACC15] hover:bg-[#FACC15]/10';
-       wrap.querySelector('#flashCard').style.borderLeft='4px solid #FACC15';
-       wrap.querySelector('#flashCard').style.background='#1E1E1E';
-     }
-     speakSingle(cleanForSpeech(row[0])); 
-   } 
-   showCard(); 
-   updateHardUI();
-   wrap.querySelector('#flashCard').onclick=()=>{ wrap.querySelector('#flashBack').classList.toggle('hidden'); }; 
-   wrap.querySelector('#nextF').onclick=()=>{ 
-     const list=getActiveList();
-     if(list.length===0) return;
-     idx=(idx+1)%list.length; showCard(); 
-   }; 
-   wrap.querySelector('#prevF').onclick=()=>{ 
-     const list=getActiveList();
-     if(list.length===0) return;
-     idx=(idx-1+list.length)%list.length; showCard(); 
-   }; 
-   wrap.querySelector('#speakF').onclick=()=>{
-     const vocabIdx=getCurrentVocabIndex();
-     if(vocabIdx>=0) speakSingle(cleanForSpeech(vocab[vocabIdx][0]));
-   };
-   wrap.querySelector('#shuffleFlash').onclick=()=>{ 
-     if(filterHard){
-       for(let i=l.hard.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [l.hard[i],l.hard[j]]=[l.hard[j],l.hard[i]]; }
-     } else {
-       for(let i=shuffleOrder.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [shuffleOrder[i],shuffleOrder[j]]=[shuffleOrder[j],shuffleOrder[i]]; }
-     }
-     idx=0; showCard(); saveLessons(); updateHardUI();
-   };
-   wrap.querySelector('#markHardBtn').onclick=()=>{
-     const vocabIdx=getCurrentVocabIndex();
-     if(vocabIdx<0) return;
-     const pos=l.hard.indexOf(vocabIdx);
-     if(pos>=0){
-       l.hard.splice(pos,1);
-     } else {
-       l.hard.push(vocabIdx);
-     }
-     saveLessons(); updateHardUI(); showCard();
-   };
-   wrap.querySelector('#filterHardBtn').onclick=()=>{
-     if(l.hard.length===0){
-       const toast=document.createElement('div'); toast.className='fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#FACC15] text-black px-4 py-2 rounded-full text-sm font-medium shadow-lg z-50'; toast.textContent='Chưa có từ khó nào, hãy đánh dấu ⭐ trước'; document.body.appendChild(toast); setTimeout(()=>toast.remove(),2000);
-       return;
-     }
-     filterHard=!filterHard;
-     idx=0;
-     showCard(); updateHardUI();
-   };
-   wrap.querySelector('#clearHardBtn').onclick=()=>{
-     if(confirm('Xóa hết danh sách từ khó nhớ của bài này?')){
-       l.hard=[]; filterHard=false; idx=0; saveLessons(); showCard(); updateHardUI();
-     }
-   };
+  `;
+  area.appendChild(wrap);
+  const q=s=>wrap.querySelector(s);
+  const hardItems=()=>{ const r=[]; const ls = cfg.scope==='all' ? lessons.map((_,k)=>k) : [currentLesson]; ls.forEach(L=>lessons[L].hard.forEach(i=>{ if(lessons[L].vocab&&lessons[L].vocab[i]) r.push({L,i}); })); return r; };
+  function updateHardUI(){
+    wrap.querySelectorAll('.dirBtn').forEach(b=>b.className='dirBtn '+(b.dataset.dir===cfg.dir?on:off));
+    wrap.querySelectorAll('.scopeBtn').forEach(b=>b.className='scopeBtn '+(b.dataset.scope===cfg.scope?on:off));
+    q('#quizBtn').className=cfg.quiz?on:off;
+    q('#flashTotal').textContent=order.length;
+    const hs=hardItems();
+    const filterBtn=q('#filterHardBtn');
+    if(filterHard){
+      filterBtn.className='px-3 py-1.5 rounded-full bg-[#FACC15] text-black text-xs font-bold';
+      filterBtn.textContent=`📚 Đang ôn từ khó (${hs.length}) • Bấm để xem tất cả`;
+    } else {
+      filterBtn.className='px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2A2A2A] text-xs';
+      filterBtn.textContent=`📚 Chỉ ôn từ khó (${hs.length})`;
+    }
+    const preview=q('#hardListPreview');
+    if(hs.length>0){
+      preview.classList.remove('hidden');
+      q('#hardTotal').textContent=hs.length;
+      q('#hardListContent').innerHTML=hs.map(it=>{
+        const r=lessons[it.L].vocab[it.i];
+        return `<div class="flex justify-between gap-2"><span>${escHtml(r[0])}</span><span class="text-[#8CB580]">${escHtml(r[2]||'')}</span></div>`;
+      }).join('');
+    } else preview.classList.add('hidden');
   }
+  function showCard(){
+    const list=getActiveList();
+    if(list.length===0){
+      q('#flashFront').textContent= filterHard ? 'Chưa có từ khó nào - hãy đánh dấu ⭐ ở chế độ tất cả' : 'Không có từ';
+      q('#flashPhon').textContent=''; q('#flashBack').textContent=''; q('#flashTag').textContent='';
+      q('#flashCounter').textContent='0 / 0'; q('#flashNum').textContent='0';
+      q('#hardBadge').classList.add('hidden');
+      return;
+    }
+    const it=list[idx % list.length];
+    const row=lessons[it.L].vocab[it.i];
+    if(!row) return;
+    const d=dirOf(it);
+    const front=q('#flashFront'), phon=q('#flashPhon'), back=q('#flashBack');
+    if(d==='en'){
+      front.textContent=row[0]||''; phon.textContent=row[1]||''; back.textContent=row[2]||'';
+      q('#flashTag').textContent='🇬🇧 Tiếng Anh → nghĩa tiếng Việt';
+    } else {
+      front.textContent=row[2]||''; phon.textContent='';
+      back.innerHTML=escHtml(row[0]||'')+(row[1]?`<div class="text-sm text-gray-400 font-mono mt-1">${escHtml(row[1])}</div>`:'');
+      q('#flashTag').textContent='🇻🇳 Tiếng Việt → nhớ từ tiếng Anh';
+    }
+    if(cfg.scope==='all') q('#flashTag').textContent+=' • Bài '+lessons[it.L].id;
+    back.classList.add('hidden');
+    q('#flashCounter').textContent=(idx+1)+' / '+list.length + (filterHard ? ' (khó)' : '');
+    q('#flashNum').textContent=(idx+1);
+    const isHard=isHardItem(it);
+    const markBtn=q('#markHardBtn');
+    q('#hardBadge').classList.toggle('hidden',!isHard);
+    if(isHard){
+      markBtn.textContent='⭐ Đã đánh dấu khó • Bấm để bỏ';
+      markBtn.className='px-3 py-1.5 rounded-full bg-[#FACC15] text-black text-xs font-bold';
+      q('#flashCard').style.background='linear-gradient(90deg, rgba(250,204,21,0.08) 0%, #1E1E1E 20%)';
+    } else {
+      markBtn.textContent='⭐ Đánh dấu khó nhớ';
+      markBtn.className='px-3 py-1.5 rounded-full bg-[#1E1E1E] border border-[#FACC15]/30 text-xs text-[#FACC15] hover:bg-[#FACC15]/10';
+      q('#flashCard').style.background='#1E1E1E';
+    }
+    if(d==='en') speakSingle(cleanForSpeech(row[0])); else { stopAll(); }
+    renderQuiz(it,d,row);
+  }
+  function renderQuiz(it,d,row){
+    const box=q('#quizOpts'); box.innerHTML='';
+    if(!cfg.quiz) return;
+    const col = d==='en' ? 2 : 0;
+    const right=(row[col]||'').trim();
+    const norm=s=>String(s||'').trim().toLowerCase();
+    const same=[], other=[];
+    lessons.forEach((x,L)=>(x.vocab||[]).forEach((r,i)=>{
+      if(L===it.L&&i===it.i) return;
+      const v=(r[col]||'').trim();
+      if(!v||norm(v)===norm(right)) return;
+      (L===it.L?same:other).push(v);
+    }));
+    shuffleArr(same); shuffleArr(other);
+    const picks=[];
+    [...same,...other].forEach(v=>{ if(picks.length<3 && !picks.some(p=>norm(p)===norm(v))) picks.push(v); });
+    const opts=picks.concat([right]); shuffleArr(opts);
+    let done=false;
+    opts.forEach((txt,k)=>{
+      const b=document.createElement('button');
+      b.className='card rounded-2xl px-4 py-3 text-left text-[15px] hover:bg-[#2A2A2A]';
+      b.textContent=String.fromCharCode(65+k)+'. '+txt;
+      b.onclick=()=>{
+        if(done) return; done=true;
+        const ok=txt===right;
+        box.querySelectorAll('button').forEach(x=>{ x.style.pointerEvents='none'; if(x.textContent.slice(3)===right) x.classList.add('qopt-ok'); });
+        if(!ok) b.classList.add('qopt-bad');
+        q('#flashBack').classList.remove('hidden');
+        toast(ok?'✅ Chính xác!':'❌ Chưa đúng', ok?'#8CB580':'#F87171');
+        if(d==='vi') speakSingle(cleanForSpeech(row[0]));
+      };
+      box.appendChild(b);
+    });
+  }
+  const reset=()=>{ idx=0; Object.keys(dirCache).forEach(k=>delete dirCache[k]); showCard(); updateHardUI(); };
+  q('#flashCard').onclick=()=>{
+    const back=q('#flashBack'); const wasHidden=back.classList.contains('hidden');
+    back.classList.toggle('hidden');
+    const it=getCurrent();
+    if(it && wasHidden && dirOf(it)==='vi') speakSingle(cleanForSpeech(lessons[it.L].vocab[it.i][0]));
+  };
+  q('#nextF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx+1)%n; showCard(); };
+  q('#prevF').onclick=()=>{ const n=getActiveList().length; if(!n) return; idx=(idx-1+n)%n; showCard(); };
+  q('#speakF').onclick=()=>{ const it=getCurrent(); if(it) speakSingle(cleanForSpeech(lessons[it.L].vocab[it.i][0])); };
+  q('#shuffleFlash').onclick=()=>{ shuffleArr(order); reset(); };
+  wrap.querySelectorAll('.dirBtn').forEach(b=>b.onclick=()=>{ cfg.dir=b.dataset.dir; reset(); });
+  q('#quizBtn').onclick=()=>{ cfg.quiz=!cfg.quiz; updateHardUI(); showCard(); };
+  wrap.querySelectorAll('.scopeBtn').forEach(b=>b.onclick=()=>{ cfg.scope=b.dataset.scope; buildOrder(); reset(); });
+  q('#markHardBtn').onclick=()=>{
+    const it=getCurrent(); if(!it) return;
+    const h=lessons[it.L].hard; const pos=h.indexOf(it.i);
+    if(pos>=0) h.splice(pos,1); else h.push(it.i);
+    saveLessons(); updateHardUI(); showCard();
+  };
+  q('#filterHardBtn').onclick=()=>{
+    if(!filterHard && hardItems().length===0){ toast('Chưa có từ khó nào, hãy đánh dấu ⭐ trước','#FACC15'); return; }
+    filterHard=!filterHard; idx=0; showCard(); updateHardUI();
+  };
+  q('#clearHardBtn').onclick=()=>{
+    const all=cfg.scope==='all';
+    if(confirm(all?'Xóa hết danh sách từ khó nhớ của TOÀN giáo trình?':'Xóa hết danh sách từ khó nhớ của bài này?')){
+      (all?lessons:[l]).forEach(x=>x.hard=[]); filterHard=false; idx=0; saveLessons(); showCard(); updateHardUI();
+    }
+  };
+  showCard(); updateHardUI();
  }else if(currentTab==='practice'){
   const l=lessons[currentLesson]; if(!l.practice) l.practice=[]; const wrap=document.createElement('div'); wrap.className='flex flex-col gap-4'; wrap.innerHTML=`
    <div class="card rounded-2xl p-5">
