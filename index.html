@@ -1406,7 +1406,24 @@ function mmMap(holder,groups,ll){
   const W=MX*2+2*(LW+GAPX+GW+GAPX)+CW;
   const cx=W/2, cy=H/2;
   const box=document.createElement('div'); box.className='mmBox'; box.style.cssText=`width:${W}px;height:${H}px`;
-  const sc=document.createElement('div'); sc.style.cssText='overflow:auto;max-width:100%;border:1px solid #2A2A2A;border-radius:16px;background:#101010;padding:6px'; sc.appendChild(box); holder.appendChild(sc);
+  const zs=(window.__mmZ=window.__mmZ||{z:1,init:false});
+  const tb=document.createElement('div'); tb.className='flex flex-wrap items-center justify-center gap-2 mb-2';
+  tb.innerHTML='<button type="button" class="ivBtn" data-z="-" title="Thu nhỏ" style="min-width:42px;font-size:18px;line-height:1">−</button><span class="mmZl text-xs text-gray-300" style="min-width:48px;text-align:center">100%</span><button type="button" class="ivBtn" data-z="+" title="Phóng to" style="min-width:42px;font-size:18px;line-height:1">+</button><button type="button" class="ivBtn" data-z="fit">⤢ Vừa khung</button><button type="button" class="ivBtn" data-z="1">100%</button><span class="text-[11px] text-gray-500">Ctrl + lăn chuột để zoom • kéo thả để di chuyển</span>';
+  holder.appendChild(tb);
+  const sc=document.createElement('div'); sc.style.cssText='overflow:auto;max-width:100%;max-height:78vh;border:1px solid #2A2A2A;border-radius:16px;background:#101010;padding:6px;cursor:grab'; sc.className='mmScroll';
+  const inner=document.createElement('div'); inner.style.cssText='position:relative'; inner.appendChild(box); sc.appendChild(inner); holder.appendChild(sc);
+  box.style.transformOrigin='0 0';
+  const zl=tb.querySelector('.mmZl');
+  const applyZ=(nz,keep)=>{ nz=Math.min(2.2,Math.max(0.25,nz)); const old=zs.z||1; const cx=(sc.scrollLeft+sc.clientWidth/2)/old, cy=(sc.scrollTop+sc.clientHeight/2)/old; zs.z=nz; box.style.transform='scale('+nz+')'; inner.style.width=(W*nz)+'px'; inner.style.height=(H*nz)+'px'; zl.textContent=Math.round(nz*100)+'%'; if(keep){ sc.scrollLeft=cx*nz-sc.clientWidth/2; sc.scrollTop=cy*nz-sc.clientHeight/2; } };
+  tb.querySelectorAll('[data-z]').forEach(bt=>bt.onclick=()=>{ const v=bt.dataset.z; if(v==='+') applyZ(zs.z*1.2,true); else if(v==='-') applyZ(zs.z/1.2,true); else if(v==='fit') applyZ((sc.clientWidth-14)/W,true); else applyZ(1,true); });
+  sc.addEventListener('wheel',e=>{ if(e.ctrlKey||e.metaKey){ e.preventDefault(); applyZ(zs.z*(e.deltaY<0?1.1:1/1.1),true); } },{passive:false});
+  // kéo thả để di chuyển (chuột)
+  let drag=null;
+  sc.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.button!==0) return; drag={x:e.clientX,y:e.clientY,l:sc.scrollLeft,t:sc.scrollTop,moved:false,id:e.pointerId}; });
+  sc.addEventListener('pointermove',e=>{ if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(!drag.moved && Math.abs(dx)+Math.abs(dy)>5){ drag.moved=true; sc.style.cursor='grabbing'; try{ sc.setPointerCapture(drag.id); }catch(_){} } if(drag.moved){ sc.scrollLeft=drag.l-dx; sc.scrollTop=drag.t-dy; } });
+  const endDrag=()=>{ if(drag&&drag.moved){ sc._dragged=true; setTimeout(()=>{ sc._dragged=false; },0); } sc.style.cursor='grab'; drag=null; };
+  sc.addEventListener('pointerup',endDrag); sc.addEventListener('pointercancel',endDrag);
+  sc.addEventListener('click',e=>{ if(sc._dragged){ e.stopPropagation(); e.preventDefault(); } },true);
   const NS='http://www.w3.org/2000/svg'; const svg=document.createElementNS(NS,'svg'); svg.setAttribute('width',W); svg.setAttribute('height',H); box.appendChild(svg);
   const curve=(x1,y1,x2,y2,col,sw)=>{ const p=document.createElementNS(NS,'path'); const mx=(x1+x2)/2; p.setAttribute('d',`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`); p.setAttribute('stroke',col); p.setAttribute('stroke-width',sw); p.setAttribute('fill','none'); p.setAttribute('stroke-linecap','round'); svg.appendChild(p); };
   const node=(cls,x,y,w,h,html,col)=>{ const d=document.createElement('div'); d.className='mmNode '+cls; d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;`+(col?`border-color:${col};`:''); d.innerHTML=html; box.appendChild(d); return d; };
@@ -1429,7 +1446,7 @@ function mmMap(holder,groups,ll){
     });
   }
   side(right,1); side(left,-1);
-  setTimeout(()=>{ sc.scrollLeft=Math.max(0,(W-sc.clientWidth)/2); },0);
+  setTimeout(()=>{ if(!zs.init){ zs.init=true; zs.z=Math.min(1,Math.max(0.45,(sc.clientWidth-14)/W)); } applyZ(zs.z,false); sc.scrollLeft=Math.max(0,(W*zs.z-sc.clientWidth)/2); },0);
 }
 
 
