@@ -1687,17 +1687,17 @@ function renderDeCuong(area){
   const wrap=document.createElement('div'); wrap.className='w-full max-w-[860px] mx-auto'+(S.vi?' dcShowVi':''); area.appendChild(wrap);
   if(!document.getElementById('dcStyle')){ const st=document.createElement('style'); st.id='dcStyle'; st.textContent='.dcVi{display:none;color:#9CA3AF;font-size:13px;margin-top:4px}.dcShowVi .dcVi,.dcCard.rev .dcVi{display:block}.dcCard{padding:12px;border-radius:14px;background:#161616;border:1px solid #2A2A2A;margin-bottom:10px}.dcTag{font-size:10px;padding:1px 8px;border-radius:99px;background:#2A2A2A;color:#9CA3AF;margin-left:6px}.dcOpt{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:12px;background:#1E1E1E;border:1px solid #2A2A2A;margin-top:6px;font-size:14px}.dcOpt:hover{background:#2A2A2A}.dcSel{background:#1E1E1E;border:1px solid #333;border-radius:8px;padding:4px 8px;color:#fff}.dcAns{margin-top:8px;padding:8px 10px;border-radius:10px;background:#0F2A1A;border:1px solid #14532d;font-size:13px}'; document.head.appendChild(st); }
   const head=document.createElement('div'); head.className='exSec';
-  head.innerHTML='<div class="text-center font-bold text-[17px]">📘 NGÂN HÀNG ĐỀ CƯƠNG ÔN TẬP – 252 CÂU</div><div class="text-center text-xs text-gray-400 mt-1">45 câu trong đề thi chính thức • có đáp án + bản dịch tiếng Việt • đáp án do mình giải (đề cương gốc không kèm đáp án)</div>';
-  const PN=['','Part 1 – Trắc nghiệm (112)','Part 2 – Đúng/Sai (35)','Part 3 – Nối (35)','Part 4 – Điền từ (35)','Part 5 – Đọc hiểu (35)'];
-  const r1=document.createElement('div'); r1.className='flex flex-wrap justify-center gap-2 mt-3';
-  PN.forEach((t,i)=>{ if(!i) return; const b=document.createElement('button'); b.className='ivBtn'+(S.part===i?' on':''); b.textContent=t; b.onclick=()=>{ S.part=i; renderAll(); }; r1.appendChild(b); }); head.appendChild(r1);
-  const r2=document.createElement('div'); r2.className='flex flex-wrap justify-center gap-2 mt-2';
-  for(let i=0;i<=7;i++){ const b=document.createElement('button'); b.className='ivBtn'+(S.lesson===i?' pri':''); b.textContent=i?('L'+i+' '+LV[i]):'Tất cả bài'; b.title=i?LN[i]:''; b.onclick=()=>{ S.lesson=i; renderAll(); }; r2.appendChild(b); } head.appendChild(r2);
-  const r3=document.createElement('div'); r3.className='flex flex-wrap justify-center items-center gap-2 mt-2';
+  head.innerHTML='<div class="text-center font-bold text-[17px]">📘 NGÂN HÀNG ĐỀ CƯƠNG ÔN TẬP – 252 CÂU</div><div class="text-center text-xs text-gray-400 mt-1">45 câu trong đề thi chính thức • có đáp án + dịch • đáp án do mình giải (đề gốc không kèm đáp án)</div>';
+  const PN=['','Part 1 – Trắc nghiệm (112 câu)','Part 2 – Đúng/Sai (35 câu)','Part 3 – Nối (35 câu)','Part 4 – Điền từ (35 câu)','Part 5 – Đọc hiểu (35 câu)'];
+  const mk=(lab,opts,cur,fn)=>{ const w=document.createElement('label'); w.className='flex items-center gap-2 text-xs text-gray-400'; w.append(lab); const sel=document.createElement('select'); sel.className='dcSel'; sel.style.cssText='min-width:190px;padding:7px 10px;font-size:13px'; sel.innerHTML=opts.map(([v,t])=>'<option value="'+v+'"'+(String(v)===String(cur)?' selected':'')+'>'+escHtml(t)+'</option>').join(''); sel.onchange=()=>fn(sel.value); w.appendChild(sel); return w; };
+  const r1=document.createElement('div'); r1.className='flex flex-wrap justify-center items-center gap-3 mt-3';
+  r1.appendChild(mk('📂 Dạng bài',PN.slice(1).map((t,i)=>[i+1,t]),S.part,v=>{ S.part=+v; renderAll(); }));
+  r1.appendChild(mk('📘 Bài',[[0,'Tất cả 7 bài']].concat([1,2,3,4,5,6,7].map(i=>[i,'Lesson '+i+' – '+LV[i]])),S.lesson,v=>{ S.lesson=+v; renderAll(); })); head.appendChild(r1);
+  const r3=document.createElement('div'); r3.className='flex flex-wrap justify-center items-center gap-2 mt-3';
   const tv=document.createElement('button'); tv.className='ivBtn'+(S.vi?' on':''); tv.textContent='🇻🇳 Hiện dịch'; tv.onclick=()=>{ S.vi=!S.vi; renderAll(); };
   const ta=document.createElement('button'); ta.className='ivBtn'+(S.ans?' on':''); ta.textContent='👁 Hiện đáp án'; ta.onclick=()=>{ S.ans=!S.ans; renderAll(); };
   const tr=document.createElement('button'); tr.className='ivBtn'; tr.textContent='🔄 Làm lại'; tr.onclick=()=>renderAll();
-  const sq=document.createElement('input'); sq.type='text'; sq.placeholder='🔍 Tìm trong đề cương…'; sq.value=S.q; sq.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:999px;padding:6px 12px;color:#fff;font-size:13px;width:200px';
+  const sq=document.createElement('input'); sq.type='text'; sq.placeholder='🔍 Tìm trong đề cương…'; sq.value=S.q; sq.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:999px;padding:6px 12px;color:#fff;font-size:13px;width:190px';
   sq.onkeydown=e=>{ if(e.key==='Enter'){ S.q=sq.value.trim(); renderAll(); } };
   r3.append(tv,ta,tr,sq); head.appendChild(r3);
   const sc=document.createElement('div'); sc.className='text-center text-sm mt-2'; sc.id='dcScore'; head.appendChild(sc); wrap.appendChild(head);
