@@ -152,7 +152,7 @@ mark.pair-mean{background:#FACC15;color:#000;border-radius:3px;padding:0 1px}
 <button class="tabBtn px-4 py-1.5 rounded-full text-sm text-gray-400" data-tab="practice">✏️ Luyện tập</button>
 <button class="tabBtn px-4 py-1.5 rounded-full text-sm text-gray-400" data-tab="exam">📝 Ôn thi</button>
 </div>
-<div id="actionBar" class="ml-auto flex gap-2"><button id="editToggle" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">✏️ Chế độ sửa</button><button id="exportBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">⬇️ Xuất JSON</button></div>
+<div id="actionBar" class="ml-auto flex gap-2"><button id="hideViBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🙈 Ẩn tiếng Việt</button><button id="editToggle" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">✏️ Chế độ sửa</button><button id="exportBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">⬇️ Xuất JSON</button></div>
 </div>
 <div class="flex-1 overflow-y-auto p-6 bg-[#0F0F0F]" id="mainContent">
 <div id="audioBar" class="card rounded-2xl p-3 flex flex-wrap items-center gap-3 mb-6 sticky top-0 z-20 shadow-lg">
@@ -1539,6 +1539,33 @@ const EXVI={"Better animals through breeding and genetics": "Vật nuôi tốt h
 const EXVI_L=(function(){ const m={}; Object.keys(EXVI).forEach(k=>{ m[k.toLowerCase()]=EXVI[k]; }); return m; })();
 function vi(t){ t=String(t==null?'':t).trim(); const v=EXVI[t]||EXVI_L[t.toLowerCase()]; return v?'<div class="exVi">'+escHtml(v)+'</div>':''; }
 function exViBtn(host,wrap){ const b=document.createElement('button'); b.className='ivBtn'+(window.__exViOn?' on':''); b.textContent='🇻🇳 Hiện dịch'; if(window.__exViOn) wrap.classList.add('exViOn'); b.onclick=()=>{ window.__exViOn=!window.__exViOn; wrap.classList.toggle('exViOn',!!window.__exViOn); b.classList.toggle('on',!!window.__exViOn); }; host.appendChild(b); return b; }
+// ===== Chế độ ẩn tiếng Việt (luyện nhớ mặt chữ) =====
+(function(){
+  const VI_SEL='.vie,td[data-f="2"],.srchEx .vi,.viMask,.exVi,.dcVi,.dcAnsVi,.mkVi';
+  const st=document.createElement('style'); st.textContent='.hideVi '+VI_SEL.split(',').join(',.hideVi ')+'{filter:blur(6px);cursor:pointer;user-select:none;transition:filter .15s}.hideVi .viShow{filter:none!important;user-select:auto}#hideViBtn.on{background:#FACC15;color:#000;border-color:#FACC15;font-weight:700}';
+  document.head.appendChild(st);
+  const VN=/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+  function on(){ try{ return localStorage.getItem('avcn_hidevi')==='1'; }catch(e){ return false; } }
+  function apply(){ const v=on(); document.body.classList.toggle('hideVi',v); const b=document.getElementById('hideViBtn'); if(b){ b.classList.toggle('on',v); b.textContent=v?'👁 Hiện tiếng Việt':'🙈 Ẩn tiếng Việt'; b.title=v?'Đang ẩn tiếng Việt – bấm vào chữ mờ để xem thử từng chỗ':'Ẩn bản dịch tiếng Việt để luyện nhớ mặt chữ tiếng Anh'; } if(v) maskPractice(); }
+  // tách phần tiếng Việt trong câu hỏi / đáp án ở tab Luyện tập: "EN (VN)" và "EN – VN"
+  function maskPractice(){
+    const root=document.getElementById('practiceList'); if(!root) return;
+    const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{ if(!VN.test(n.nodeValue)) return NodeFilter.FILTER_REJECT; const p=n.parentElement; if(!p||p.closest('button,textarea,input,select,option,.viMask,[contenteditable="true"],h3,.text-xs')) return NodeFilter.FILTER_REJECT; return NodeFilter.FILTER_ACCEPT; }});
+    const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n=>{ const t=n.nodeValue; let m=t.match(/\s*\([^()]*\)\s*$/)||t.match(/\s[–-]\s[^–]*$/); let cut=-1;
+      const par=[...t.matchAll(/\s*\([^()]*\)/g)].filter(x=>VN.test(x[0]));
+      const dash=t.lastIndexOf(' – ');
+      if(par.length){ const f=document.createDocumentFragment(); let last=0; par.forEach(x=>{ f.append(t.slice(last,x.index)); const s=document.createElement('span'); s.className='viMask'; s.textContent=x[0]; f.append(s); last=x.index+x[0].length; }); f.append(t.slice(last)); n.replaceWith(f); }
+      else if(dash>=0 && VN.test(t.slice(dash))){ const f=document.createDocumentFragment(); f.append(t.slice(0,dash)); const s=document.createElement('span'); s.className='viMask'; s.textContent=t.slice(dash); f.append(s); n.replaceWith(f); }
+    });
+  }
+  document.addEventListener('click',e=>{ if(!document.body.classList.contains('hideVi')||(typeof isEdit!=='undefined'&&isEdit)) return; const t=e.target.closest&&e.target.closest(VI_SEL); if(!t) return; t.classList.toggle('viShow'); e.stopPropagation(); e.preventDefault(); },true);
+  let busy=false, tm=null;
+  const mo=new MutationObserver(()=>{ if(busy||!on()) return; clearTimeout(tm); tm=setTimeout(()=>{ busy=true; try{ maskPractice(); }finally{ busy=false; } },60); });
+  function init(){ const b=document.getElementById('hideViBtn'); if(b) b.onclick=()=>{ try{ localStorage.setItem('avcn_hidevi',on()?'0':'1'); }catch(e){} apply(); }; const ca=document.getElementById('contentArea'); if(ca) mo.observe(ca,{childList:true,subtree:true}); apply(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+
 function exMatchSec(title,ins,pairs,n,lessonTag){
   const sec=exSec(title,ins); const body=sec.querySelector('.exBody'); let cur=[];
   function build(){
@@ -1661,7 +1688,7 @@ function renderMock(area, lesson){
   ps.querySelector('[data-a=spk]').onclick=()=>speakText(T.passage[1].map(p=>p[0]).join(' '),'en');
   const saBoxes=[];
   T.sa.forEach((q,i)=>{ const n=T.mcq.length+T.tf.length+T.match.length+T.fill.length+i+1; const d=document.createElement('div'); d.className='exQ';
-    d.innerHTML='<div><b>'+n+'. '+escHtml(q[0])+'</b></div><textarea placeholder="Your answer…"></textarea><div class="flex gap-2 mt-2"><button class="ivBtn" data-a="show">👁 Xem gợi ý</button><button class="ivBtn" data-a="speak">🔊</button></div><div class="a">'+escHtml(q[1])+'<div style="color:#9CA3AF;margin-top:4px">'+escHtml(q[2])+'</div></div>';
+    d.innerHTML='<div><b>'+n+'. '+escHtml(q[0])+'</b></div><textarea placeholder="Your answer…"></textarea><div class="flex gap-2 mt-2"><button class="ivBtn" data-a="show">👁 Xem gợi ý</button><button class="ivBtn" data-a="speak">🔊</button></div><div class="a">'+escHtml(q[1])+'<div class="dcAnsVi" style="color:#9CA3AF;margin-top:4px">'+escHtml(q[2])+'</div></div>';
     d.querySelector('[data-a=show]').onclick=()=>{ const a=d.querySelector('.a'); a.style.display=a.style.display==='block'?'none':'block'; };
     d.querySelector('[data-a=speak]').onclick=()=>speakText(q[1],'en'); saBoxes.push(d); b5.appendChild(d); });
   // logic
@@ -1758,7 +1785,7 @@ function renderDeCuong(area){
           pe[i].innerHTML=h; pe[i].style.borderLeftColor=bc||'transparent'; pv[i].style.borderLeftColor=bc||'transparent'; }); };
       c.querySelector('[data-a=vi]').onclick=()=>c.classList.toggle('rev'); c.querySelector('[data-a=spk]').onclick=()=>speakText(g.para.map(p=>p.en).join(' '),'en'); wrap.appendChild(c); refresh();
       g.qs.forEach((q,qi)=>{ if(!hit(q.q,q.qv,q.a,q.av)) return; const col=COL[qi%8]; const d=card(q.n,g.l,q.q,q.qv); d.style.borderLeft='4px solid '+col; const where=[...new Set((q.ev||[]).map(e=>e[0]+1))].join(', ');
-        d.insertAdjacentHTML('beforeend','<textarea placeholder="Your answer (1–2 sentences)…" style="width:100%;margin-top:8px;background:#0F0F0F;border:1px solid #333;border-radius:10px;padding:8px;color:#fff;min-height:56px"></textarea><div class="flex gap-2 mt-2"><button class="ivBtn" data-a="show">👁 Xem đáp án mẫu</button><button class="ivBtn" data-a="sp">🔊 Nghe đáp án</button></div><div class="dcAns" style="display:none;border-left:4px solid '+col+'"><div>'+escHtml(q.a)+'</div><div style="color:#9CA3AF;margin-top:4px">'+escHtml(q.av)+'</div><div style="margin-top:6px;color:'+col+';font-weight:700">📍 Câu trả lời nằm ở đoạn '+where+' của bài đọc (phần tô màu này)</div></div>');
+        d.insertAdjacentHTML('beforeend','<textarea placeholder="Your answer (1–2 sentences)…" style="width:100%;margin-top:8px;background:#0F0F0F;border:1px solid #333;border-radius:10px;padding:8px;color:#fff;min-height:56px"></textarea><div class="flex gap-2 mt-2"><button class="ivBtn" data-a="show">👁 Xem đáp án mẫu</button><button class="ivBtn" data-a="sp">🔊 Nghe đáp án</button></div><div class="dcAns" style="display:none;border-left:4px solid '+col+'"><div>'+escHtml(q.a)+'</div><div class="dcAnsVi" style="color:#9CA3AF;margin-top:4px">'+escHtml(q.av)+'</div><div style="margin-top:6px;color:'+col+';font-weight:700">📍 Câu trả lời nằm ở đoạn '+where+' của bài đọc (phần tô màu này)</div></div>');
         const a=d.querySelector('.dcAns'); const setShow=on=>{ a.style.display=on?'block':'none'; if(on){ shown.set(q.n,qi); d.classList.add('rev'); } else shown.delete(q.n); refresh(); };
         d.querySelector('[data-a=show]').onclick=()=>{ const on=a.style.display!=='block'; setShow(on); if(on){ const k=pe.findIndex((_,i)=>(q.ev||[]).some(e=>e[0]===i)); if(k>=0) pe[k].scrollIntoView({behavior:'smooth',block:'center'}); } };
         d.querySelector('[data-a=sp]').onclick=()=>speakText(q.a,'en'); if(S.ans) setShow(true); wrap.appendChild(d); }); });
