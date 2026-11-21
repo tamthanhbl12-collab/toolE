@@ -1593,7 +1593,7 @@ function exFillSec(title,ins,sents,n){
   function build(){
     body.innerHTML=''; sec.querySelector('.exScore').textContent='';
     const sample=exShuf(sents).slice(0,n); const bankWords=exShuf([...new Set(sample.map(s=>s[1].toLowerCase()))]);
-    const bank=document.createElement('div'); bank.className='exBank'; bank.innerHTML=bankWords.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return `<span>${escHtml(w)}${v?' <i style="font-size:11px;color:#8CB580;font-style:normal">('+v+')</i>':''}</span>`; }).join(''); body.appendChild(bank);
+    const bank=document.createElement('div'); bank.className='exBank'; bank.innerHTML=bankWords.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return `<span>${escHtml(w)}${v?' <i class="viMask" style="font-size:11px;color:#8CB580;font-style:normal">('+v+')</i>':''}</span>`; }).join(''); body.appendChild(bank);
     cur=sample.map((s,i)=>{ const row=document.createElement('div'); row.className='exSent'; const parts=s[0].split('____');
       row.innerHTML=`${i+1}. ${escHtml(parts[0])}<select><option value="">……</option>${bankWords.map(w=>`<option value="${escHtml(w)}">${escHtml(w)}</option>`).join('')}</select>${escHtml(parts.slice(1).join('____'))}${vi(s[0])}`;
       body.appendChild(row); return {row,sel:row.querySelector('select'),ans:s[1].toLowerCase()}; });
@@ -1677,7 +1677,7 @@ function renderMock(area, lesson){
     const sel=document.createElement('select'); sel.className='ivBtn'; sel.innerHTML='<option value="">–</option>'+T.matchOpts.map((_,k)=>'<option value="'+k+'">'+L(k)+'</option>').join(''); st.mt[i]={sel,box:d}; d.appendChild(sel); b3.appendChild(d); });
   // Part IV
   const b4=sec('PART IV. FILL IN THE BLANKS ('+T.fill.length+' questions – 1.25 points)','Complete each sentence with the correct word from the box. Use each word only once.');
-  const bank=document.createElement('div'); bank.className='mb-3 text-[14px]'; bank.innerHTML='<b>Word bank:</b> '+T.bank.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return '<span class="ivBtn" style="display:inline-block;margin:2px">'+escHtml(w)+(v?' <i style="font-size:11px;color:#8CB580;font-style:normal">('+escHtml(v)+')</i>':'')+'</span>'; }).join(''); b4.appendChild(bank);
+  const bank=document.createElement('div'); bank.className='mb-3 text-[14px]'; bank.innerHTML='<b>Word bank:</b> '+T.bank.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return '<span class="ivBtn" style="display:inline-block;margin:2px">'+escHtml(w)+(v?' <i class="viMask" style="font-size:11px;color:#8CB580;font-style:normal">('+escHtml(v)+')</i>':'')+'</span>'; }).join(''); b4.appendChild(bank);
   T.fill.forEach((f,i)=>{ const n=T.mcq.length+T.tf.length+T.match.length+i+1; const d=document.createElement('div'); d.className='exQ'; const parts=f[0].split('___');
     d.innerHTML='<b>'+n+'.</b> '+escHtml(parts[0]); const inp=document.createElement('input'); inp.type='text'; inp.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:8px;padding:4px 8px;margin:0 4px;width:150px;color:#fff'; inp.autocomplete='off'; d.appendChild(inp); d.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+vi(f[0])); st.fill[i]={inp,box:d}; b4.appendChild(d); });
   // Part V
@@ -1749,7 +1749,7 @@ function renderDeCuong(area){
     D.tf.filter(x=>inL(x.l)&&hit(x.s,x.sv)).forEach(x=>{ hdrFor(x.l); total++;
       const c=card(x.n,x.l,x.s,x.sv); const row=document.createElement('div'); row.className='flex gap-2 mt-2'; let locked=false; const bt=[];
       const fb=document.createElement('div'); fb.className='dcAns'; fb.style.display='none';
-      const show=()=>{ fb.style.display='block'; fb.innerHTML='Đáp án: <b>'+(x.a?'TRUE (Đúng)':'FALSE (Sai)')+'</b>'+(x.why?'<div style="color:#9CA3AF;margin-top:4px">'+escHtml(x.why)+'</div>':''); c.classList.add('rev'); };
+      const show=()=>{ fb.style.display='block'; fb.innerHTML='Đáp án: <b>'+(x.a?'TRUE (Đúng)':'FALSE (Sai)')+'</b>'+(x.why?'<div class="dcAnsVi" style="color:#9CA3AF;margin-top:4px">'+escHtml(x.why)+'</div>':''); c.classList.add('rev'); };
       [['TRUE',true],['FALSE',false]].forEach(([lab,v])=>{ const b=document.createElement('button'); b.className='ivBtn'; b.style.minWidth='80px'; b.textContent=lab; bt.push(b); row.appendChild(b);
         b.onclick=()=>{ if(locked) return; locked=true; done++; if(v===x.a){ ok++; b.style.background=OK; } else { b.style.background=BAD; bt[x.a?0:1].style.background=OK; } show(); upd(); }; });
       c.append(row,fb); if(S.ans){ locked=true; total--; bt[x.a?0:1].style.background=OK; show(); } wrap.appendChild(c); });
@@ -1764,13 +1764,13 @@ function renderDeCuong(area){
       if(S.ans){ sels.forEach(([sel,r,it])=>{ sel.value=it.a; }); grade(); } });
   } else if(S.part===4){
     D.fill.filter(g=>inL(g.l)).forEach(g=>{ hdrFor(g.l);
-      const c=document.createElement('div'); c.className='dcCard'; c.innerHTML='<div class="mb-2"><b>Word bank:</b> '+g.bank.map((w,k)=>'<span class="ivBtn" style="display:inline-block;margin:3px;line-height:1.25;text-align:center">'+escHtml(w)+'<br><span style="font-size:11px;color:#8CB580">('+escHtml(g.bv[k])+')</span></span>').join('')+'</div>';
+      const c=document.createElement('div'); c.className='dcCard'; c.innerHTML='<div class="mb-2"><b>Word bank:</b> '+g.bank.map((w,k)=>'<span class="ivBtn" style="display:inline-block;margin:3px;line-height:1.25;text-align:center">'+escHtml(w)+'<br><span class="viMask" style="font-size:11px;color:#8CB580">('+escHtml(g.bv[k])+')</span></span>').join('')+'</div>';
       const ins=[]; g.items.forEach(it=>{ const r=document.createElement('div'); r.className='p-2 rounded-xl mt-1'; r.style.background='#1E1E1E'; const parts=it.s.split('__________'); r.innerHTML='<b>'+it.n+'.</b> '+escHtml(parts[0]);
         const inp=document.createElement('input'); inp.type='text'; inp.autocomplete='off'; inp.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:8px;padding:3px 8px;margin:0 4px;width:140px;color:#fff'; r.appendChild(inp); r.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+'<div class="dcVi">'+escHtml(it.sv.replace('__','_____'))+'</div>'); c.appendChild(r); ins.push([inp,r,it]); });
       const chk=document.createElement('button'); chk.className='ivBtn pri mt-3'; chk.textContent='✅ Kiểm tra'; const res=document.createElement('span'); res.className='ml-3 text-sm';
       const grade=()=>{ let k=0; ins.forEach(([inp,r,it])=>{ const good=inp.value.trim().toLowerCase().replace(/[‑–]/g,'-')===it.a.toLowerCase(); if(good) k++; r.style.background=good?OK:BAD; inp.disabled=true;
-          const vi=r.querySelector('.dcVi'); vi.innerHTML=escHtml(it.sv).replace('__','<b style="color:#FDE047;background:#00000055;padding:1px 6px;border-radius:6px;font-size:14px">'+escHtml(it.va)+'</b>'); vi.style.display='block';
-          if(!good) r.insertAdjacentHTML('beforeend','<div class="text-xs mt-1">Đáp án: <b>'+escHtml(it.a)+'</b> = <b style="color:#FDE047">'+escHtml(it.va)+'</b></div>'); }); res.innerHTML='<b>'+k+'/'+g.items.length+'</b>'; c.classList.add('rev'); };
+          const vi=r.querySelector('.dcVi'); vi.innerHTML=escHtml(it.sv).replace('__','<b class="viMask" style="color:#FDE047;background:#00000055;padding:1px 6px;border-radius:6px;font-size:14px">'+escHtml(it.va)+'</b>'); vi.style.display='block';
+          if(!good) r.insertAdjacentHTML('beforeend','<div class="text-xs mt-1">Đáp án: <b>'+escHtml(it.a)+'</b> = <b class="viMask" style="color:#FDE047">'+escHtml(it.va)+'</b></div>'); }); res.innerHTML='<b>'+k+'/'+g.items.length+'</b>'; c.classList.add('rev'); };
       chk.onclick=grade; c.append(chk,res); wrap.appendChild(c);
       if(S.ans){ ins.forEach(([inp,r,it])=>{ inp.value=it.a; }); grade(); } });
   } else {
