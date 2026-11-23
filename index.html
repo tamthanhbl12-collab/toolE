@@ -1849,6 +1849,13 @@ function renderDeCuong(area){
   const sq=document.createElement('input'); sq.type='text'; sq.placeholder='🔍 Tìm trong đề cương…'; sq.value=S.q; sq.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:999px;padding:6px 12px;color:#fff;font-size:13px;width:190px';
   sq.onkeydown=e=>{ if(e.key==='Enter'){ S.q=sq.value.trim(); renderAll(); } };
   r3.append(tv,ta,tr,sq); head.appendChild(r3);
+  if(S.part===1||S.part===2){
+    const r4=document.createElement('div'); r4.className='flex flex-wrap justify-center items-center gap-2 mt-3'; r4.style.cssText='padding:8px 10px;border:1px dashed #3a3a3a;border-radius:14px';
+    const lab=document.createElement('span'); lab.className='text-xs text-gray-400'; lab.textContent='🔀 Luyện phản xạ:'; r4.appendChild(lab);
+    const tq=document.createElement('button'); tq.className='ivBtn'+(S.shufQ?' on':''); tq.textContent=S.shufQ?'✅ Đảo câu: BẬT':'Đảo câu'; tq.onclick=()=>{ S.shufQ=!S.shufQ; if(!S.seed) S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(tq);
+    if(S.part===1){ const to=document.createElement('button'); to.className='ivBtn'+(S.shufO?' on':''); to.textContent=S.shufO?'✅ Đảo đáp án: BẬT':'Đảo đáp án'; to.onclick=()=>{ S.shufO=!S.shufO; if(!S.seed) S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(to); }
+    if(S.shufQ||(S.part===1&&S.shufO)){ const rs=document.createElement('button'); rs.className='ivBtn'; rs.textContent='🎲 Xáo lại'; rs.onclick=()=>{ S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(rs); }
+    const hint=document.createElement('span'); hint.className='text-[11px] text-gray-500'; hint.textContent=(S.shufQ||(S.part===1&&S.shufO))?'Tắt để về thứ tự gốc của đề cương':'Tắt = đúng thứ tự gốc của đề cương'; r4.appendChild(hint); head.appendChild(r4); }
   const sc=document.createElement('div'); sc.className='text-center text-sm mt-2'; sc.id='dcScore'; head.appendChild(sc); wrap.appendChild(head);
   const qv=S.q.toLowerCase(); const inL=l=>!S.lesson||S.lesson===l; const hit=(...a)=>!qv||a.join(' ').toLowerCase().includes(qv);
   let done=0,ok=0,total=0; const upd=()=>{ sc.innerHTML=total?('Đã làm: <b>'+done+'</b>/'+total+' • Đúng: <b style="color:#8CB580">'+ok+'</b>'):''; };
@@ -1856,14 +1863,20 @@ function renderDeCuong(area){
   const card=(n,l,textEn,textVi)=>{ const c=document.createElement('div'); c.className='dcCard'; c.innerHTML='<div><b>'+(n?n+'. ':'')+escHtml(textEn)+'</b><span class="dcTag">L'+l+'</span> <button class="ivBtn" data-a="spk" style="padding:2px 8px;font-size:12px">🔊</button></div>'+(textVi?'<div class="dcVi">'+escHtml(textVi)+'</div>':''); c.querySelector('[data-a=spk]').onclick=()=>speakText(textEn,'en'); return c; };
   let lastL=0; const hdrFor=l=>{ if(l!==lastL){ lastL=l; lessonHdr(l); } };
   if(S.part===1){
-    D.mcq.filter(x=>inL(x.l)&&hit(x.q,x.qv,x.o.join(' '),x.ov.join(' '))).forEach(x=>{ hdrFor(x.l); total++;
+    const R1=rndPRNG((S.seed||1)*31+7); const sh1=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(R1()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; };
+    const fixedO=/above|both|none of|all of|neither|all the/i;
+    let arr1=D.mcq.filter(x=>inL(x.l)&&hit(x.q,x.qv,x.o.join(' '),x.ov.join(' '))); if(S.shufQ) arr1=sh1(arr1);
+    arr1.forEach(x=>{ if(!S.shufQ) hdrFor(x.l); total++;
       const c=card(x.n,x.l,x.q,x.qv); let locked=false; const bt=[];
-      x.o.forEach((t,k)=>{ const b=document.createElement('button'); b.className='dcOpt'; b.innerHTML=L(k)+'. '+escHtml(t)+'<div class="dcVi">'+escHtml(x.ov[k])+'</div>'; bt.push(b); c.appendChild(b);
-        b.onclick=()=>{ if(locked) return; locked=true; done++; c.classList.add('rev'); if(k===x.a){ ok++; b.style.background=OK; } else { b.style.background=BAD; bt[x.a].style.background=OK; } upd(); }; });
-      if(S.ans){ bt[x.a].style.background=OK; c.classList.add('rev'); locked=true; total--; }
+      const ord=(S.shufO&&!x.o.some(o=>fixedO.test(o)))?sh1(x.o.map((_,i)=>i)):x.o.map((_,i)=>i); const ai=ord.indexOf(x.a);
+      ord.forEach((k0,k)=>{ const t=x.o[k0]; const b=document.createElement('button'); b.className='dcOpt'; b.innerHTML=L(k)+'. '+escHtml(t)+'<div class="dcVi">'+escHtml(x.ov[k0])+'</div>'; bt.push(b); c.appendChild(b);
+        b.onclick=()=>{ if(locked) return; locked=true; done++; c.classList.add('rev'); if(k===ai){ ok++; b.style.background=OK; } else { b.style.background=BAD; bt[ai].style.background=OK; } upd(); }; });
+      if(S.ans){ bt[ai].style.background=OK; c.classList.add('rev'); locked=true; total--; }
       c.insertAdjacentHTML('beforeend',x.note?'<div class="dcVi">'+escHtml(x.note)+'</div>':''); wrap.appendChild(c); });
   } else if(S.part===2){
-    D.tf.filter(x=>inL(x.l)&&hit(x.s,x.sv)&&(!S.tf||S.tf==='all'||(S.tf==='T')===x.a)).forEach(x=>{ hdrFor(x.l); total++;
+    const R2=rndPRNG((S.seed||1)*17+3); let arr2=D.tf.filter(x=>inL(x.l)&&hit(x.s,x.sv)&&(!S.tf||S.tf==='all'||(S.tf==='T')===x.a));
+    if(S.shufQ){ arr2=arr2.slice(); for(let i=arr2.length-1;i>0;i--){ const j=Math.floor(R2()*(i+1)); const t=arr2[i]; arr2[i]=arr2[j]; arr2[j]=t; } }
+    arr2.forEach(x=>{ if(!S.shufQ) hdrFor(x.l); total++;
       const c=card(x.n,x.l,x.s,x.sv); const row=document.createElement('div'); row.className='flex gap-2 mt-2'; let locked=false; const bt=[];
       const fb=document.createElement('div'); fb.className='dcAns'; fb.style.display='none';
       const show=()=>{ fb.style.display='block'; fb.innerHTML='Đáp án: <b>'+(x.a?'TRUE (Đúng)':'FALSE (Sai)')+'</b>'+(x.why?'<div class="dcAnsVi" style="color:#9CA3AF;margin-top:4px">'+escHtml(x.why)+'</div>':''); c.classList.add('rev'); };
