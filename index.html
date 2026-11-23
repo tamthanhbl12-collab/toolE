@@ -444,14 +444,16 @@ function renderWordTab(area, key){
  ins.forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addWord(); } }));
  renderTable();
 }
+const TEST_ORDER={'ĐC':0,'T1':1,'T3':2,'RND':3,'WR':4};
+function lessonOrder(){ return lessons.map((_,i)=>i).sort((a,b)=>{ const oa=TEST_ORDER[lessons[a].id], ob=TEST_ORDER[lessons[b].id]; return (oa!=null&&ob!=null)?oa-ob:a-b; }); }
 function renderLessonList(){
  try{ wrSync(); }catch(e){}
  const c=document.getElementById('lessonList'); c.innerHTML='';
  window.__lg=lgOf(lessons[currentLesson]); (window.__lgLast=window.__lgLast||{})[window.__lg]=currentLesson;
  const gb=document.getElementById('grpBar');
- if(gb){ gb.innerHTML=''; LESSON_GROUPS.forEach(g=>{ const cnt=lessons.filter(x=>lgOf(x)===g.k).length; if(!cnt) return; const on=g.k===window.__lg; const b=document.createElement('button'); b.className='flex-1 px-2 py-2 rounded-xl text-[12px] font-bold border'; b.style.cssText=on?`background:${g.c};color:#000;border-color:${g.c}`:'background:#1E1E1E;color:#9CA3AF;border-color:#2A2A2A'; b.textContent=g.n+' ('+cnt+')'; b.onclick=()=>{ const arr=lessons.map((_,j)=>j).filter(j=>lgOf(lessons[j])===g.k); const last=window.__lgLast[g.k]; currentLesson=(last!=null&&arr.includes(last))?last:arr[0]; selectedReadingIdx=null; renderAll(); }; gb.appendChild(b); }); }
- lessons.forEach((l,i)=>{
-  const active=i===currentLesson;
+ if(gb){ gb.innerHTML=''; LESSON_GROUPS.forEach(g=>{ const cnt=lessons.filter(x=>lgOf(x)===g.k).length; if(!cnt) return; const on=g.k===window.__lg; const b=document.createElement('button'); b.className='flex-1 px-2 py-2 rounded-xl text-[12px] font-bold border'; b.style.cssText=on?`background:${g.c};color:#000;border-color:${g.c}`:'background:#1E1E1E;color:#9CA3AF;border-color:#2A2A2A'; b.textContent=g.n+' ('+cnt+')'; b.onclick=()=>{ const arr=lessonOrder().filter(j=>lgOf(lessons[j])===g.k); const last=window.__lgLast[g.k]; currentLesson=(last!=null&&arr.includes(last))?last:arr[0]; selectedReadingIdx=null; renderAll(); }; gb.appendChild(b); }); }
+ lessonOrder().forEach(i=>{
+  const l=lessons[i]; const active=i===currentLesson;
   if(lgOf(l)!==window.__lg) return;
   const div=document.createElement('div');
   div.className='p-3 rounded-2xl border flex gap-3 cursor-pointer hover:bg-[#1E1E1E] '+(active?'bg-[#1E1E1E] border-[#333]':'border-transparent');
