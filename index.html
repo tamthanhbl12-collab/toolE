@@ -1834,7 +1834,10 @@ function renderDeCuong(area){
   const mk=(lab,opts,cur,fn)=>{ const w=document.createElement('label'); w.className='flex items-center gap-2 text-xs text-gray-400'; w.append(lab); const sel=document.createElement('select'); sel.className='dcSel'; sel.style.cssText='min-width:190px;padding:7px 10px;font-size:13px'; sel.innerHTML=opts.map(([v,t])=>'<option value="'+v+'"'+(String(v)===String(cur)?' selected':'')+'>'+escHtml(t)+'</option>').join(''); sel.onchange=()=>fn(sel.value); w.appendChild(sel); return w; };
   const r1=document.createElement('div'); r1.className='flex flex-wrap justify-center items-center gap-3 mt-3';
   r1.appendChild(mk('📂 Dạng bài',PN.slice(1).map((t,i)=>[i+1,t]),S.part,v=>{ S.part=+v; renderAll(); }));
-  r1.appendChild(mk('📘 Bài',[[0,'Tất cả 7 bài']].concat([1,2,3,4,5,6,7].map(i=>[i,'Lesson '+i+' – '+LV[i]])),S.lesson,v=>{ S.lesson=+v; renderAll(); })); head.appendChild(r1);
+  r1.appendChild(mk('📘 Bài',[[0,'Tất cả 7 bài']].concat([1,2,3,4,5,6,7].map(i=>[i,'Lesson '+i+' – '+LV[i]])),S.lesson,v=>{ S.lesson=+v; renderAll(); }));
+  if(S.part===2){ const sc2=D.tf.filter(x=>!S.lesson||S.lesson===x.l); const nT=sc2.filter(x=>x.a).length, nF=sc2.length-nT;
+    r1.appendChild(mk('✅❌ Lọc câu',[['all','Tất cả ('+sc2.length+' câu)'],['T','✅ Chỉ câu TRUE ('+nT+')'],['F','❌ Chỉ câu FALSE ('+nF+')']],S.tf||'all',v=>{ S.tf=v; renderAll(); })); }
+  head.appendChild(r1);
   const r3=document.createElement('div'); r3.className='flex flex-wrap justify-center items-center gap-2 mt-3';
   const tv=document.createElement('button'); tv.className='ivBtn'+(S.vi?' on':''); tv.textContent='🇻🇳 Hiện dịch'; tv.onclick=()=>{ S.vi=!S.vi; renderAll(); };
   const ta=document.createElement('button'); ta.className='ivBtn'+(S.ans?' on':''); ta.textContent='👁 Hiện đáp án'; ta.onclick=()=>{ S.ans=!S.ans; renderAll(); };
@@ -1856,7 +1859,7 @@ function renderDeCuong(area){
       if(S.ans){ bt[x.a].style.background=OK; c.classList.add('rev'); locked=true; total--; }
       c.insertAdjacentHTML('beforeend',x.note?'<div class="dcVi">'+escHtml(x.note)+'</div>':''); wrap.appendChild(c); });
   } else if(S.part===2){
-    D.tf.filter(x=>inL(x.l)&&hit(x.s,x.sv)).forEach(x=>{ hdrFor(x.l); total++;
+    D.tf.filter(x=>inL(x.l)&&hit(x.s,x.sv)&&(!S.tf||S.tf==='all'||(S.tf==='T')===x.a)).forEach(x=>{ hdrFor(x.l); total++;
       const c=card(x.n,x.l,x.s,x.sv); const row=document.createElement('div'); row.className='flex gap-2 mt-2'; let locked=false; const bt=[];
       const fb=document.createElement('div'); fb.className='dcAns'; fb.style.display='none';
       const show=()=>{ fb.style.display='block'; fb.innerHTML='Đáp án: <b>'+(x.a?'TRUE (Đúng)':'FALSE (Sai)')+'</b>'+(x.why?'<div class="dcAnsVi" style="color:#9CA3AF;margin-top:4px">'+escHtml(x.why)+'</div>':''); c.classList.add('rev'); };
