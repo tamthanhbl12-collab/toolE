@@ -1851,11 +1851,11 @@ function renderDeCuong(area){
   r3.append(tv,ta,tr,sq); head.appendChild(r3);
   if(S.part===1||S.part===2){
     const r4=document.createElement('div'); r4.className='flex flex-wrap justify-center items-center gap-2 mt-3'; r4.style.cssText='padding:8px 10px;border:1px dashed #3a3a3a;border-radius:14px';
-    const lab=document.createElement('span'); lab.className='text-xs text-gray-400'; lab.textContent='🔀 Luyện phản xạ:'; r4.appendChild(lab);
+    const lab=document.createElement('span'); lab.className='text-xs text-gray-400'; const isRx=!!(S.shufQ||(S.part===1&&S.shufO)); lab.innerHTML=isRx?'<b style="color:#FACC15">🔀 ĐANG LUYỆN PHẢN XẠ</b> (đã xáo)':'<b style="color:#8CB580">📌 BẢN GỐC</b> theo đề cương • 🔀 Luyện phản xạ:'; r4.appendChild(lab);
     const tq=document.createElement('button'); tq.className='ivBtn'+(S.shufQ?' on':''); tq.textContent=S.shufQ?'✅ Đảo câu: BẬT':'Đảo câu'; tq.onclick=()=>{ S.shufQ=!S.shufQ; if(!S.seed) S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(tq);
     if(S.part===1){ const to=document.createElement('button'); to.className='ivBtn'+(S.shufO?' on':''); to.textContent=S.shufO?'✅ Đảo đáp án: BẬT':'Đảo đáp án'; to.onclick=()=>{ S.shufO=!S.shufO; if(!S.seed) S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(to); }
     if(S.shufQ||(S.part===1&&S.shufO)){ const rs=document.createElement('button'); rs.className='ivBtn'; rs.textContent='🎲 Xáo lại'; rs.onclick=()=>{ S.seed=Math.floor(Math.random()*1e6)+1; renderAll(); }; r4.appendChild(rs); }
-    const hint=document.createElement('span'); hint.className='text-[11px] text-gray-500'; hint.textContent=(S.shufQ||(S.part===1&&S.shufO))?'Tắt để về thứ tự gốc của đề cương':'Tắt = đúng thứ tự gốc của đề cương'; r4.appendChild(hint); head.appendChild(r4); }
+    const hint=document.createElement('span'); hint.className='text-[11px] text-gray-500'; hint.textContent=isRx?'Tắt hết các nút để về bản gốc':''; r4.appendChild(hint); head.appendChild(r4); }
   const sc=document.createElement('div'); sc.className='text-center text-sm mt-2'; sc.id='dcScore'; head.appendChild(sc); wrap.appendChild(head);
   const qv=S.q.toLowerCase(); const inL=l=>!S.lesson||S.lesson===l; const hit=(...a)=>!qv||a.join(' ').toLowerCase().includes(qv);
   let done=0,ok=0,total=0; const upd=()=>{ sc.innerHTML=total?('Đã làm: <b>'+done+'</b>/'+total+' • Đúng: <b style="color:#8CB580">'+ok+'</b>'):''; };
