@@ -152,7 +152,7 @@ mark.pair-mean{background:#FACC15;color:#000;border-radius:3px;padding:0 1px}
 <button class="tabBtn px-4 py-1.5 rounded-full text-sm text-gray-400" data-tab="practice">✏️ Luyện tập</button>
 <button class="tabBtn px-4 py-1.5 rounded-full text-sm text-gray-400" data-tab="exam">📝 Ôn thi</button>
 </div>
-<div id="actionBar" class="ml-auto flex gap-2"><button id="lookBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🔍 Chạm tra từ</button><button id="hideViBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🙈 Ẩn tiếng Việt</button><button id="editToggle" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">✏️ Chế độ sửa</button><button id="exportBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">⬇️ Xuất JSON</button></div>
+<div id="actionBar" class="ml-auto flex gap-2"><button id="snapBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🧲 Cuộn từng câu</button><button id="lookBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🔍 Chạm tra từ</button><button id="hideViBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">🙈 Ẩn tiếng Việt</button><button id="editToggle" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">✏️ Chế độ sửa</button><button id="exportBtn" class="px-3 py-1.5 bg-[#1E1E1E] border border-[#2A2A2A] rounded-full text-sm">⬇️ Xuất JSON</button></div>
 </div>
 <div class="flex-1 overflow-y-auto p-6 bg-[#0F0F0F]" id="mainContent">
 <div id="audioBar" class="card rounded-2xl p-3 flex flex-wrap items-center gap-3 mb-6 sticky top-0 z-20 shadow-lg">
@@ -1096,6 +1096,7 @@ const IMGV_CSS=`
 .ivChip.used{opacity:.35}
 .ivBtn{padding:8px 14px;border-radius:999px;background:#1E1E1E;border:1px solid #2A2A2A;font-size:13px}
 .ansBox{margin-top:8px;background:#0F0F0F;border:1px solid #333;border-radius:10px;overflow:hidden}.ansBox:focus-within{border-color:#FACC15}.exQ .ansBox textarea,.dcCard .ansBox textarea,.ansBox textarea{border:0!important;margin:0!important;background:transparent!important;border-radius:0!important;outline:none;width:100%}.exQ .ansBox .a,.dcCard .ansBox .dcAns,.ansBox .a,.ansBox .dcAns{margin:0!important;border-radius:0!important;border-top:1px dashed #3F6B47!important;border-right:0!important;border-bottom:0!important}.exQ .ansBox .a{border-left:0!important}.ansBox.shown textarea:placeholder-shown{display:none!important}.ansBox.shown textarea:placeholder-shown+.a,.ansBox.shown textarea:placeholder-shown+.dcAns{border-top:0!important}
+@media (pointer:fine){body.snapOn #mainContent{scroll-snap-type:y mandatory;scroll-padding-top:8px}body.snapOn .dcCard,body.snapOn .exQ,body.snapOn .exSec,body.snapOn .dcHdr{scroll-snap-align:start}}
 .mtGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:start}.mtR{position:sticky;top:8px;background:#1C1C1C;border:1px solid #2A2A2A;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}.mtR>div{padding:3px 0}.mtL>.exQ,.mtL>div{margin-top:0}@media(max-width:760px){.mtGrid{grid-template-columns:1fr}.mtR{position:static;order:-1}}
 .ivBtn:hover{background:#2A2A2A}
 .ivBtn.pri{background:#8CB580;color:#000;font-weight:700;border-color:#8CB580}
@@ -1861,7 +1862,7 @@ function renderDeCuong(area){
   const sc=document.createElement('div'); sc.className='text-center text-sm mt-2'; sc.id='dcScore'; head.appendChild(sc); wrap.appendChild(head);
   const qv=S.q.toLowerCase(); const inL=l=>!S.lesson||S.lesson===l; const hit=(...a)=>!qv||a.join(' ').toLowerCase().includes(qv);
   let done=0,ok=0,total=0; const upd=()=>{ sc.innerHTML=total?('Đã làm: <b>'+done+'</b>/'+total+' • Đúng: <b style="color:#8CB580">'+ok+'</b>'):''; };
-  const lessonHdr=l=>{ const h=document.createElement('div'); h.className='font-bold mt-4 mb-2 text-[14px]'; h.style.color='#FACC15'; h.textContent='LESSON '+l+' – '+LN[l].toUpperCase()+'  ('+LV[l]+')'; wrap.appendChild(h); };
+  const lessonHdr=l=>{ const h=document.createElement('div'); h.className='font-bold mt-4 mb-2 text-[14px] dcHdr'; h.style.color='#FACC15'; h.textContent='LESSON '+l+' – '+LN[l].toUpperCase()+'  ('+LV[l]+')'; wrap.appendChild(h); };
   const card=(n,l,textEn,textVi)=>{ const c=document.createElement('div'); c.className='dcCard'; c.innerHTML='<div><b>'+(n?n+'. ':'')+escHtml(textEn)+'</b><span class="dcTag">L'+l+'</span> <button class="ivBtn" data-a="spk" style="padding:2px 8px;font-size:12px">🔊</button></div>'+(textVi?'<div class="dcVi">'+escHtml(textVi)+'</div>':''); c.querySelector('[data-a=spk]').onclick=()=>speakText(textEn,'en'); return c; };
   let lastL=0; const hdrFor=l=>{ if(l!==lastL){ lastL=l; lessonHdr(l); } };
   if(S.part===1){
@@ -2156,6 +2157,14 @@ const PairHL=(function(){
  document.addEventListener('keydown',e=>{ if(e.key==='Escape') hide(); });
  window.addEventListener('scroll',()=>{ if(!formMode && pop.style.display==='block' && isMobileLayout()) hide(); },{passive:true});
  document.getElementById('mainContent').addEventListener('scroll',()=>{ if(!formMode && pop.style.display==='block') hide(); },{passive:true});
+})();
+
+// ===== Cuộn từng câu: lăn chuột thì tự khớp trọn 1 câu vào khung nhìn (chỉ máy có chuột) =====
+(function(){
+ const KEY='avcn_snap'; let on=true; try{ on=localStorage.getItem(KEY)!=='0'; }catch(e){}
+ function paint(){ document.body.classList.toggle('snapOn',on); const b=document.getElementById('snapBtn'); if(!b) return; b.textContent=on?'🧲 Cuộn từng câu: BẬT':'🧲 Cuộn từng câu: TẮT'; b.style.background=on?'#FACC15':''; b.style.color=on?'#000':''; b.style.fontWeight=on?'700':''; }
+ function init(){ const b=document.getElementById('snapBtn'); if(b) b.onclick=()=>{ on=!on; try{ localStorage.setItem(KEY,on?'1':'0'); }catch(e){} paint(); toast(on?'🧲 Lăn chuột sẽ khớp trọn từng câu':'Cuộn tự do như thường'); }; paint(); }
+ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 
 // ===== Chế độ "Chạm tra từ": chạm 1 từ tiếng Anh (kể cả trong nút đáp án A/B/C/D, câu trả lời) → hiện nghĩa, không chọn đáp án =====
