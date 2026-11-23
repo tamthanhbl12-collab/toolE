@@ -1093,6 +1093,7 @@ const IMGV_CSS=`
 .ivChip{padding:6px 12px;border-radius:999px;background:#2A2A2A;font-size:13px;cursor:pointer}
 .ivChip.used{opacity:.35}
 .ivBtn{padding:8px 14px;border-radius:999px;background:#1E1E1E;border:1px solid #2A2A2A;font-size:13px}
+.mtGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px;align-items:start}.mtR{position:sticky;top:8px;background:#1C1C1C;border:1px solid #2A2A2A;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5}.mtR>div{padding:3px 0}.mtL>.exQ,.mtL>div{margin-top:0}@media(max-width:760px){.mtGrid{grid-template-columns:1fr}.mtR{position:static;order:-1}}
 .ivBtn:hover{background:#2A2A2A}
 .ivBtn.pri{background:#8CB580;color:#000;font-weight:700;border-color:#8CB580}
 .ivBtn.on{background:#FACC15;color:#000;font-weight:700;border-color:#FACC15}
@@ -1776,9 +1777,10 @@ function renderMock(area, lesson){
     d.appendChild(bx); b2.appendChild(d); });
   // Part III
   const b3=sec('PART III. MATCHING ('+T.match.length+' questions – 1.25 points)','Match each word in Column A with the correct meaning in Column B. Write the correct letter.');
-  const opts=document.createElement('div'); opts.className='mb-3 text-[13px]'; opts.innerHTML=T.matchOpts.map((t,k)=>'<div><b>'+L(k)+'.</b> '+escHtml(t)+vi(t)+'</div>').join(''); b3.appendChild(opts);
+  const opts=document.createElement('div'); opts.className='mtR'; opts.innerHTML=T.matchOpts.map((t,k)=>'<div><b>'+L(k)+'.</b> '+escHtml(t)+vi(t)+'</div>').join('');
+  const g3=document.createElement('div'); g3.className='mtGrid'; const g3L=document.createElement('div'); g3L.className='mtL'; g3.append(g3L,opts); b3.appendChild(g3);
   T.match.forEach((m,i)=>{ const n=T.mcq.length+T.tf.length+i+1; const d=document.createElement('div'); d.className='exQ flex items-center justify-between gap-2'; d.innerHTML='<div><b>'+n+'. '+escHtml(m[0])+'</b>'+vi(m[0])+'</div>';
-    const sel=document.createElement('select'); sel.className='ivBtn'; sel.innerHTML='<option value="">–</option>'+T.matchOpts.map((_,k)=>'<option value="'+k+'">'+L(k)+'</option>').join(''); st.mt[i]={sel,box:d}; d.appendChild(sel); b3.appendChild(d); });
+    const sel=document.createElement('select'); sel.className='ivBtn'; sel.innerHTML='<option value="">–</option>'+T.matchOpts.map((_,k)=>'<option value="'+k+'">'+L(k)+'</option>').join(''); st.mt[i]={sel,box:d}; d.appendChild(sel); g3L.appendChild(d); });
   // Part IV
   const b4=sec('PART IV. FILL IN THE BLANKS ('+T.fill.length+' questions – 1.25 points)','Complete each sentence with the correct word from the box. Use each word only once.');
   const bank=document.createElement('div'); bank.className='mb-3 text-[14px]'; bank.innerHTML='<b>Word bank:</b> '+T.bank.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return '<span class="ivBtn" style="display:inline-block;margin:2px">'+escHtml(w)+(v?' <i class="viMask" style="font-size:11px;color:#8CB580;font-style:normal">('+escHtml(v)+')</i>':'')+'</span>'; }).join(''); b4.appendChild(bank);
@@ -1868,9 +1870,10 @@ function renderDeCuong(area){
       c.append(row,fb); if(S.ans){ locked=true; total--; bt[x.a?0:1].style.background=OK; show(); } wrap.appendChild(c); });
   } else if(S.part===3){
     D.mt.filter(g=>inL(g.l)).forEach(g=>{ hdrFor(g.l);
-      const c=document.createElement('div'); c.className='dcCard'; const col=document.createElement('div'); col.className='text-[13px] mb-2'; col.innerHTML=g.opts.map((t,k)=>'<div><b>'+L(k)+'.</b> '+escHtml(t)+'<span class="dcVi">'+escHtml(g.ov[k])+'</span></div>').join(''); c.appendChild(col);
+      const c=document.createElement('div'); c.className='dcCard'; const col=document.createElement('div'); col.className='mtR'; col.innerHTML=g.opts.map((t,k)=>'<div><b>'+L(k)+'.</b> '+escHtml(t)+'<span class="dcVi">'+escHtml(g.ov[k])+'</span></div>').join('');
+      const mg=document.createElement('div'); mg.className='mtGrid'; const ml=document.createElement('div'); ml.className='mtL'; mg.append(ml,col); c.appendChild(mg);
       const sels=[]; g.items.forEach(it=>{ const r=document.createElement('div'); r.className='flex items-center justify-between gap-2 mt-2 p-2 rounded-xl'; r.style.background='#1E1E1E'; r.innerHTML='<div><b>'+it.n+'. '+escHtml(it.t)+'</b><span class="dcVi">'+escHtml(it.tv)+'</span></div>';
-        const sel=document.createElement('select'); sel.className='dcSel'; sel.innerHTML='<option value="">–</option>'+g.opts.map((_,k)=>'<option value="'+k+'">'+L(k)+'</option>').join(''); r.appendChild(sel); c.appendChild(r); sels.push([sel,r,it]); });
+        const sel=document.createElement('select'); sel.className='dcSel'; sel.innerHTML='<option value="">–</option>'+g.opts.map((_,k)=>'<option value="'+k+'">'+L(k)+'</option>').join(''); r.appendChild(sel); ml.appendChild(r); sels.push([sel,r,it]); });
       const chk=document.createElement('button'); chk.className='ivBtn pri mt-3'; chk.textContent='✅ Kiểm tra'; const res=document.createElement('span'); res.className='ml-3 text-sm';
       const grade=()=>{ let k=0; sels.forEach(([sel,r,it])=>{ const good=sel.value!==''&&+sel.value===it.a; if(good) k++; r.style.background=good?OK:BAD; let t=r.querySelector('.key'); if(!t){ t=document.createElement('span'); t.className='key text-xs'; r.insertBefore(t,sel); } t.textContent=good?'':'Đáp án: '+L(it.a)+'  '; sel.disabled=true; }); res.innerHTML='<b>'+k+'/'+g.items.length+'</b>'; c.classList.add('rev'); };
       chk.onclick=grade; c.append(chk,res); wrap.appendChild(c);
