@@ -2021,7 +2021,19 @@ const PairHL=(function(){
   });
   return {items, found};
  }
- return {fromEnglish, fromVietnamese, clear};
+ // Ôn thi / đề mẫu: bôi chữ TA → nghĩa + câu dịch TV bên dưới (chữ tương ứng được tô sáng)
+ function fromExam(card, txt){
+  clear(); const items=lookup(txt); const seen=new Set(); let found=0, html='', plain='';
+  card.querySelectorAll('.exVi,.dcVi,.dcAnsVi,.mkVi,.viMask').forEach(el=>{
+   const t=el.textContent.replace(/\s+/g,' ').trim(); if(!t||seen.has(t)) return; seen.add(t);
+   const spans=findGroups(t, items.map(x=>x.cands)).sort((a,b)=>a[0]-b[0]);
+   if(!spans.length){ if(!plain) plain='<div class="sp-vi" style="margin-top:6px;font-size:12.5px;color:#9CA3AF">'+escHtml(t)+'</div>'; return; }
+   if(found>=3) return; found+=spans.length; let out='', q=0;
+   spans.forEach(([a,b])=>{ out+=escHtml(t.slice(q,a))+'<mark class="pair-mean" style="background:#FACC1566;color:#fff;border-radius:3px;padding:0 2px">'+escHtml(t.slice(a,b))+'</mark>'; q=b; });
+   out+=escHtml(t.slice(q)); html+='<div class="sp-vi" style="margin-top:6px;font-size:12.5px;color:#E5E7EB">🇻🇳 '+out+'</div>'; });
+  return {items, found, html: html||plain};
+ }
+ return {fromEnglish, fromVietnamese, fromExam, clear};
 })();
 
 // ===== Bôi đen chữ trong bài đọc → Thêm vào từ vựng / Đọc từ này =====
@@ -2033,9 +2045,15 @@ const PairHL=(function(){
   const sel=window.getSelection(); if(!sel || !sel.rangeCount || sel.isCollapsed) return null;
   const txt=sel.toString().replace(/\s+/g,' ').trim(); if(!txt || txt.length>200) return null;
   const n=sel.anchorNode; const el=n && (n.nodeType===1? n : n.parentElement);
-  if(!el || !el.closest('#contentArea [data-ridx]') || isEdit || currentTab!=='reading') return null;
+  if(!el || isEdit || !el.closest('#contentArea')) return null;
+  const ae=document.activeElement; if(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return null;
   const rect=sel.getRangeAt(0).getBoundingClientRect();
-  return {txt, isVi:!!el.closest('.vie'), rect, card:el.closest('#contentArea [data-ridx]')};
+  const rc=el.closest('[data-ridx]');
+  if(rc){ if(currentTab!=='reading') return null; return {txt, isVi:!!el.closest('.vie'), rect, card:rc, ctx:'r'}; }
+  if(currentTab!=='exam') return null;
+  if(el.closest('.exVi,.dcVi,.dcAnsVi,.mkVi,.viMask,.vie')) return null;
+  const xc=el.closest('button,.exQ,.dcCard,.exSec'); if(!xc) return null;
+  return {txt, isVi:false, rect, card:xc, ctx:'x'};
  }
  function place(){
   const r=cur.rect, w=pop.offsetWidth, h=pop.offsetHeight;
@@ -2054,19 +2072,20 @@ const PairHL=(function(){
  }
  function showMenu(){
   formMode=false;
-  const pr=cur.isVi? PairHL.fromVietnamese(cur.card, cur.txt) : PairHL.fromEnglish(cur.card, cur.txt);
+  const xm=cur.ctx==='x'; const l0=lessons[currentLesson]; const canAdd=!(l0.mock||l0.dc||l0.wr);
+  const pr=xm? PairHL.fromExam(cur.card, cur.txt) : (cur.isVi? PairHL.fromVietnamese(cur.card, cur.txt) : PairHL.fromEnglish(cur.card, cur.txt));
   cur.items=pr.items;
   pop.innerHTML=`<div class="sp-word"></div><div class="sp-mean"></div>
-   <button class="sp-btn pri" data-a="add">➕ Thêm vào danh sách từ vựng</button>
+   ${canAdd?'<button class="sp-btn pri" data-a="add">➕ Thêm vào danh sách từ vựng</button>':''}
    <button class="sp-btn" data-a="speak">🔊 Đọc ${cur.isVi?'đoạn':'từ'} này</button>`;
   pop.querySelector('.sp-word').textContent='“'+cur.txt+'”';
   const mb=pop.querySelector('.sp-mean');
   if(!cur.isVi && pr.items.length){
-   mb.innerHTML=pr.items.slice(0,4).map(x=>'<b>'+escHtml(x.en)+'</b>: '+escHtml([...new Set(x.means)].slice(0,2).join(' / '))).join('<br>')+(pr.found?'':'<div class="sp-note" style="margin-top:2px">Không thấy đúng chữ này trong câu dịch bên dưới</div>');
+   mb.innerHTML=pr.items.slice(0,4).map(x=>'<b>'+escHtml(x.en)+'</b>: '+escHtml([...new Set(x.means)].slice(0,2).join(' / '))).join('<br>')+(xm? (pr.html||'') : (pr.found?'':'<div class="sp-note" style="margin-top:2px">Không thấy đúng chữ này trong câu dịch bên dưới</div>'));
   }else if(cur.isVi && pr.items.length){
    mb.innerHTML='Tiếng Anh: '+[...new Set(pr.items.map(x=>'<b>'+escHtml(x.en)+'</b>'))].join(', ');
   }else{
-   mb.innerHTML='<span class="sp-note">Chưa có nghĩa trong từ điển – bấm ➕ để thêm, lần sau sẽ tự sáng chữ tương ứng</span>';
+   mb.innerHTML='<span class="sp-note">Chưa có nghĩa trong từ điển'+(canAdd?' – bấm ➕ để thêm, lần sau sẽ tự sáng chữ tương ứng':'')+'</span>'+(xm? (pr.html||''):'');
   }
   pop.style.display='block'; place();
  }
