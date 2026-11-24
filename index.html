@@ -2187,18 +2187,25 @@ const PairHL=(function(){
   const rc=rg.getBoundingClientRect(); if(x<rc.left-6||x>rc.right+6||y<rc.top-6||y>rc.bottom+6) return null;
   return rg;
  }
+ // Chuột: click (không kéo) = chọn đáp án bình thường; nhấn giữ + kéo qua chữ = tra nghĩa. Cảm ứng: chạm = tra nghĩa.
+ let dn=null;
+ document.addEventListener('pointerdown',e=>{ dn={x:e.clientX,y:e.clientY,type:e.pointerType}; },true);
  document.addEventListener('click',e=>{
   if(!on || currentTab!=='exam') return;
-  const t=e.target; if(!t || !t.closest) return;
+  const mouse=dn && dn.type==='mouse'; const moved=mouse? Math.hypot(e.clientX-dn.x,e.clientY-dn.y) : 0;
+  if(mouse && moved<6) return;
+  const sx=mouse?dn.x:e.clientX, sy=mouse?dn.y:e.clientY;
+  const t=mouse? document.elementFromPoint(sx,sy) : e.target; if(!t || !t.closest) return;
   if(!t.closest('#contentArea') || t.closest('#selPop')) return;
   if(!t.closest('.exQ,.dcCard,.exSec')) return;
   if(t.closest('select,input,textarea,[data-a],.exVi,.dcVi,.dcAnsVi,.mkVi,.viMask,.vie')) return;
-  const rg=wordAt(e.clientX,e.clientY); if(!rg) return;
+  let rg=wordAt(sx,sy); if(!rg) return;
+  if(mouse){ const r2=wordAt(e.clientX,e.clientY); if(r2 && r2.startContainer===rg.startContainer){ const a=Math.min(rg.startOffset,r2.startOffset), b=Math.max(rg.endOffset,r2.endOffset); rg.setStart(rg.startContainer,a); rg.setEnd(rg.startContainer,b); } }
   e.preventDefault(); e.stopImmediatePropagation();
   const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
   document.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
  },true);
- function init(){ const b=document.getElementById('lookBtn'); if(b) b.onclick=()=>{ on=!on; try{ localStorage.setItem(KEY,on?'1':'0'); }catch(e){} paint(); if(on) toast('🔍 Chạm vào chữ tiếng Anh để xem nghĩa. Tắt lại khi muốn chọn đáp án.'); }; paint(); }
+ function init(){ const b=document.getElementById('lookBtn'); if(b) b.onclick=()=>{ on=!on; try{ localStorage.setItem(KEY,on?'1':'0'); }catch(e){} paint(); if(on) toast('🔍 Nhấn giữ và kéo qua chữ tiếng Anh để xem nghĩa. Click bình thường (không kéo) vẫn là chọn đáp án.'); }; paint(); }
  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 
