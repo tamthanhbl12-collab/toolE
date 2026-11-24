@@ -1594,6 +1594,7 @@ function exMatchSec(title,ins,pairs,n,lessonTag){
   build(); return sec;
 }
 
+function fillSel(words,w){ const sel=document.createElement('select'); sel.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:8px;padding:4px 8px;margin:0 4px;min-width:140px;max-width:100%;color:#fff'; sel.innerHTML='<option value="">… chọn từ …</option>'+words.map(x=>'<option value="'+escHtml(x)+'">'+escHtml(x)+'</option>').join(''); if(w) sel.style.width=w; return sel; }
 function exFillSec(title,ins,sents,n){
   const sec=exSec(title,ins); const body=sec.querySelector('.exBody'); let cur=[];
   function build(){
@@ -1790,7 +1791,7 @@ function renderMock(area, lesson){
   const b4=sec('PART IV. FILL IN THE BLANKS ('+T.fill.length+' questions – 1.25 points)','Complete each sentence with the correct word from the box. Use each word only once.');
   const bank=document.createElement('div'); bank.className='mb-3 text-[14px]'; bank.innerHTML='<b>Word bank:</b> '+T.bank.map(w=>{ const v=(vi(w).match(/>([^<]*)</)||[])[1]; return '<span class="ivBtn" style="display:inline-block;margin:2px">'+escHtml(w)+(v?' <i class="viMask" style="font-size:11px;color:#8CB580;font-style:normal">('+escHtml(v)+')</i>':'')+'</span>'; }).join(''); b4.appendChild(bank);
   T.fill.forEach((f,i)=>{ const n=T.mcq.length+T.tf.length+T.match.length+i+1; const d=document.createElement('div'); d.className='exQ'; const parts=f[0].split('___');
-    d.innerHTML='<b>'+n+'.</b> '+escHtml(parts[0]); const inp=document.createElement('input'); inp.type='text'; inp.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:8px;padding:4px 8px;margin:0 4px;width:150px;color:#fff'; inp.autocomplete='off'; d.appendChild(inp); d.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+vi(f[0])); st.fill[i]={inp,box:d}; b4.appendChild(d); });
+    d.innerHTML='<b>'+n+'.</b> '+escHtml(parts[0]); const inp=fillSel(T.bank.slice().sort((a,b)=>a.localeCompare(b))); d.appendChild(inp); d.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+vi(f[0])); st.fill[i]={inp,box:d}; b4.appendChild(d); });
   // Part V
   const b5=sec('PART V. READING COMPREHENSION – SHORT ANSWER ('+T.sa.length+' questions – 1.25 points)','Read the passage and answer the questions in ONE or TWO sentences.');
   const ps=document.createElement('div'); ps.className='exQ'; ps.innerHTML='<div class="text-center font-bold mb-2">'+escHtml(T.passage[0])+'</div>'+T.passage[1].map(p=>'<p style="margin:0 0 8px;line-height:1.6">'+escHtml(p[0])+'</p><p class="mkVi" style="display:none;margin:0 0 10px;color:#9CA3AF;font-size:13px">'+escHtml(p[1])+'</p>').join('')
@@ -1900,7 +1901,7 @@ function renderDeCuong(area){
     D.fill.filter(g=>inL(g.l)).forEach(g=>{ hdrFor(g.l);
       const c=document.createElement('div'); c.className='dcCard'; c.innerHTML='<div class="mb-2"><b>Word bank:</b> '+g.bank.map((w,k)=>'<span class="ivBtn" style="display:inline-block;margin:3px;line-height:1.25;text-align:center">'+escHtml(w)+'<br><span class="viMask" style="font-size:11px;color:#8CB580">('+escHtml(g.bv[k])+')</span></span>').join('')+'</div>';
       const ins=[]; g.items.forEach(it=>{ const r=document.createElement('div'); r.className='p-2 rounded-xl mt-1'; r.style.background='#1E1E1E'; const parts=it.s.split('__________'); r.innerHTML='<b>'+it.n+'.</b> '+escHtml(parts[0]);
-        const inp=document.createElement('input'); inp.type='text'; inp.autocomplete='off'; inp.style.cssText='background:#0F0F0F;border:1px solid #333;border-radius:8px;padding:3px 8px;margin:0 4px;width:140px;color:#fff'; r.appendChild(inp); r.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+'<div class="dcVi">'+escHtml(it.sv.replace('__','_____'))+'</div>'); c.appendChild(r); ins.push([inp,r,it]); });
+        const inp=fillSel(g.bank.slice().sort((a,b)=>a.localeCompare(b))); r.appendChild(inp); r.insertAdjacentHTML('beforeend',escHtml(parts[1]||'')+'<div class="dcVi">'+escHtml(it.sv.replace('__','_____'))+'</div>'); c.appendChild(r); ins.push([inp,r,it]); });
       const chk=document.createElement('button'); chk.className='ivBtn pri mt-3'; chk.textContent='✅ Kiểm tra'; const res=document.createElement('span'); res.className='ml-3 text-sm';
       const grade=()=>{ let k=0; ins.forEach(([inp,r,it])=>{ const good=inp.value.trim().toLowerCase().replace(/[‑–]/g,'-')===it.a.toLowerCase(); if(good) k++; r.style.background=good?OK:BAD; inp.disabled=true;
           const vi=r.querySelector('.dcVi'); vi.innerHTML=escHtml(it.sv).replace('__','<b class="viMask" style="color:#FDE047;background:#00000055;padding:1px 6px;border-radius:6px;font-size:14px">'+escHtml(it.va)+'</b>'); vi.style.display='block';
